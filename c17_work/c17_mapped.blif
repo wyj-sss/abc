@@ -1,0 +1,12 @@
+# Benchmark "c17_work/C17" written by ABC on Mon Feb  2 16:17:49 2026
+.model c17_work/C17
+.inputs 1GAT(0) 2GAT(1) 3GAT(2) 6GAT(3) 7GAT(4)
+.outputs 22GAT(10) 23GAT(9)
+.gate NAND2_X1  A1=1GAT(0) A2=3GAT(2) ZN=new_n8
+.gate NAND2_X1  A1=3GAT(2) A2=6GAT(3) ZN=new_n9
+.gate NAND2_X1  A1=new_n9 A2=2GAT(1) ZN=new_n10
+.gate NAND2_X1  A1=new_n10 A2=new_n8 ZN=22GAT(10)
+.gate INV_X1    A=2GAT(1) ZN=new_n12
+.gate INV_X1    A=7GAT(4) ZN=new_n13
+.gate AOI22_X1  A1=new_n12 A2=new_n13 B1=3GAT(2) B2=6GAT(3) ZN=23GAT(9)
+.end

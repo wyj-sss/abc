@@ -26,9 +26,9 @@ ABC_NAMESPACE_IMPL_START
 ////////////////////////////////////////////////////////////////////////
 
 // the largest number of cuts considered
-#define  MAP_CUTS_MAX_COMPUTE   1000
+#define  MAP_CUTS_MAX_COMPUTE   10
 // the largest number of cuts used
-#define  MAP_CUTS_MAX_USE       250
+#define  MAP_CUTS_MAX_USE       10
 
 // temporary hash table to store the cuts
 typedef struct Map_CutTableStrutct_t Map_CutTable_t;
@@ -177,6 +177,9 @@ void Map_MappingCuts( Map_Man_t * p )
     int nCuts, nNodes, i;
     abctime clk = Abc_Clock();
     // set the elementary cuts for the PI variables
+    // 【强制设置为 2】
+    if ( p->nVarsMax != 2 )
+        p->nVarsMax = 2;
     assert( p->nVarsMax > 1 && p->nVarsMax < 7 );
     for ( i = 0; i < p->nInputs; i++ )
         Map_MappingCutsInput( p, p->pInputs[i] );
@@ -590,6 +593,9 @@ int Map_CutMergeTwo( Map_Cut_t * pCut1, Map_Cut_t * pCut2, Map_Node_t * ppNodes[
 {
     Map_Node_t * pNodeTemp;
     int nTotal, i, k, min, fMismatch;
+     // 【添加这个检查 - 强制 2-input】
+    if ( nNodesMax > 2 )
+        nNodesMax = 2;
 
     // check the special case when at least of the cuts is the largest
     if ( pCut1->nLeaves == nNodesMax )
@@ -651,6 +657,9 @@ int Map_CutMergeTwo( Map_Cut_t * pCut1, Map_Cut_t * pCut2, Map_Node_t * ppNodes[
             continue;
         // we found a new entry to add
         if ( nTotal == nNodesMax )
+            return 0;
+             // 【添加这两行】强制限制为 2-input
+        if ( nTotal >= 2 )
             return 0;
         ppNodes[nTotal++] = pCut2->ppLeaves[i];
     }

@@ -1,0 +1,54 @@
+digraph C17_Mapper_All_Flow {
+    fontname = "WenQuanYi Micro Hei";
+    node [
+        shape=box, 
+        style=filled, 
+        color=lightblue, 
+        fontname="WenQuanYi Micro Hei",
+        fontsize=10,
+        width=0.8,
+        height=0.4
+    ];
+    edge [
+        color=darkgray, 
+        fontname="WenQuanYi Micro Hei",
+        fontsize=9,
+        arrowhead=vee
+    ];
+    subgraph cluster_0 {
+        label = "C17 正常映射流程（原始ABC映射）";
+        labeljust=l;
+        color=red;
+        fontname="WenQuanYi Micro Hei";
+        A1 [label="读取C17.aig网表"];
+        A2 [label="读取Nangate工艺库"];
+        A3 [label="打印原始网表信息\n(5输入/2输出，6个AND节点)"];
+        A4 [label="执行map命令\n(默认K-feasible Cut，支持多输入门)"];
+        A5 [label="割计算+真值表匹配\n(允许AOI22/INV/NAND2混合匹配)"];
+        A6 [label="时延最优+面积优化"];
+        A7 [label="输出映射结果\n(7个单元，面积5.59，时延62.93)"];
+        A8 [label="生成c17_mapped.v"];
+        A9 [label="OpenROAD布局\n(生成c17_result.def/v)"];
+        A1 -> A2 -> A3 -> A4 -> A5 -> A6 -> A7 -> A8 -> A9;
+    }
+    subgraph cluster_1 {
+        label = "C17 一对一映射流程（修改ABC源码）";
+        labeljust=l;
+        color=blue;
+        fontname="WenQuanYi Micro Hei";
+        B1 [label="修改mapperCore.c\n(强制K=2，禁用面积优化)"];
+        B2 [label="修改mapperCut.c\n(限制Cut数量/大小为2)"];
+        B3 [label="重新编译ABC\n(make clean && make -j4)"];
+        B4 [label="读取C17.aig+工艺库"];
+        B5 [label="执行map命令\n(强制2-input，禁用多输入门)"];
+        B6 [label="严格一对一映射\n(仅NAND2_X1，6个单元完全匹配AIG节点)"];
+        B7 [label="输出映射结果\n(6个单元，面积4.80，时延65.50)"];
+        B8 [label="生成c17_one_to_one.v"];
+        B9 [label="OpenROAD重新布局\n(生成c17_one_to_one_result.def/v)"];
+        B1 -> B2 -> B3 -> B4 -> B5 -> B6 -> B7 -> B8 -> B9;
+    }
+    A3 -> B4 [style=dashed, color=purple, label="基于原始网表"];
+    rankdir=TB;
+    nodesep=0.6;
+    ranksep=0.8;
+}

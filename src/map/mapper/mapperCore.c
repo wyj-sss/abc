@@ -50,10 +50,13 @@ ABC_NAMESPACE_IMPL_START
 int Map_Mapping( Map_Man_t * p )
 {
     int fShowSwitching         = 0;
-    int fUseAreaFlow           = 1;
-    int fUseExactArea          = !p->fSwitching;
-    int fUseExactAreaWithPhase = !p->fSwitching;
+    int fUseAreaFlow           = 0;
+    int fUseExactArea          = 0;
+    int fUseExactAreaWithPhase = 0;
     abctime clk;
+    // 【添加这两行 - 强制 K=2】
+    if ( p->nVarsMax > 2 )
+        p->nVarsMax = 2;
 
     //////////////////////////////////////////////////////////////////////
     // perform pre-mapping computations
@@ -103,58 +106,58 @@ ABC_PRT( "Time", p->timeMatch );
     //////////////////////////////////////////////////////////////////////
     // perform area recovery using area flow
     clk = Abc_Clock();
-    if ( fUseAreaFlow )
-    {
-        // compute the required times
-        Map_TimeComputeRequiredGlobal( p );
-        // recover area flow
-        p->fMappingMode = 1;
-        Map_MappingMatches( p );
-        // compute the references and collect the nodes used in the mapping
-        Map_MappingSetRefs( p );
-        p->AreaFinal = Map_MappingGetArea( p );
-if ( p->fVerbose )
-{
-printf( "AreaFlow : %s = %8.2f  Flow = %11.1f  Area = %11.1f  %4.1f %%   ", 
-                    fShowSwitching? "Switch" : "Delay", 
-                    fShowSwitching? Map_MappingGetSwitching(p) : p->fRequiredGlo, 
-                    Map_MappingGetAreaFlow(p), p->AreaFinal, 
-                    100.0*(p->AreaBase-p->AreaFinal)/p->AreaBase );
-ABC_PRT( "Time", Abc_Clock() - clk );
-}
-    }
-    p->timeArea += Abc_Clock() - clk;
-    //////////////////////////////////////////////////////////////////////
+//     if ( fUseAreaFlow )
+//     {
+//         // compute the required times
+//         Map_TimeComputeRequiredGlobal( p );
+//         // recover area flow
+//         p->fMappingMode = 1;
+//         Map_MappingMatches( p );
+//         // compute the references and collect the nodes used in the mapping
+//         Map_MappingSetRefs( p );
+//         p->AreaFinal = Map_MappingGetArea( p );
+// if ( p->fVerbose )
+// {
+// printf( "AreaFlow : %s = %8.2f  Flow = %11.1f  Area = %11.1f  %4.1f %%   ", 
+//                     fShowSwitching? "Switch" : "Delay", 
+//                     fShowSwitching? Map_MappingGetSwitching(p) : p->fRequiredGlo, 
+//                     Map_MappingGetAreaFlow(p), p->AreaFinal, 
+//                     100.0*(p->AreaBase-p->AreaFinal)/p->AreaBase );
+// ABC_PRT( "Time", Abc_Clock() - clk );
+// }
+//     }
+//     p->timeArea += Abc_Clock() - clk;
+//     //////////////////////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////////////////////
-    // perform area recovery using exact area
-    clk = Abc_Clock();
-    if ( fUseExactArea )
-    {
-        // compute the required times
-        Map_TimeComputeRequiredGlobal( p );
-        // recover area
-        p->fMappingMode = 2;
-        Map_MappingMatches( p );
-        // compute the references and collect the nodes used in the mapping
-        Map_MappingSetRefs( p );
-        p->AreaFinal = Map_MappingGetArea( p );
-if ( p->fVerbose )
-{
-printf( "Area     : %s = %8.2f  Flow = %11.1f  Area = %11.1f  %4.1f %%   ", 
-                    fShowSwitching? "Switch" : "Delay", 
-                    fShowSwitching? Map_MappingGetSwitching(p) : p->fRequiredGlo, 
-                    0.0, p->AreaFinal, 
-                    100.0*(p->AreaBase-p->AreaFinal)/p->AreaBase );
-ABC_PRT( "Time", Abc_Clock() - clk );
-}
-    }
-    p->timeArea += Abc_Clock() - clk;
-    //////////////////////////////////////////////////////////////////////
+//     //////////////////////////////////////////////////////////////////////
+//     // perform area recovery using exact area
+//     clk = Abc_Clock();
+//     if ( fUseExactArea )
+//     {
+//         // compute the required times
+//         Map_TimeComputeRequiredGlobal( p );
+//         // recover area
+//         p->fMappingMode = 2;
+//         Map_MappingMatches( p );
+//         // compute the references and collect the nodes used in the mapping
+//         Map_MappingSetRefs( p );
+//         p->AreaFinal = Map_MappingGetArea( p );
+// if ( p->fVerbose )
+// {
+// printf( "Area     : %s = %8.2f  Flow = %11.1f  Area = %11.1f  %4.1f %%   ", 
+//                     fShowSwitching? "Switch" : "Delay", 
+//                     fShowSwitching? Map_MappingGetSwitching(p) : p->fRequiredGlo, 
+//                     0.0, p->AreaFinal, 
+//                     100.0*(p->AreaBase-p->AreaFinal)/p->AreaBase );
+// ABC_PRT( "Time", Abc_Clock() - clk );
+// }
+//     }
+//     p->timeArea += Abc_Clock() - clk;
+//     //////////////////////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////////////////////
-    // perform area recovery using exact area
-    clk = Abc_Clock();
+//     //////////////////////////////////////////////////////////////////////
+//     // perform area recovery using exact area
+//     clk = Abc_Clock();
     if ( fUseExactAreaWithPhase )
     {
         // compute the required times
