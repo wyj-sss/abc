@@ -187,6 +187,140 @@ ABC_PRT( "Total runtime", Abc_Clock() - clkTotal );
 
 /**Function*************************************************************
 
+  Synopsis    [Interface with the SC mapping package for K=2 one-to-one mapping.]
+
+  Description [Same as Abc_NtkMap() but calls Map_Mapping_OTO() instead of Map_Mapping().]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+Abc_Ntk_t * Abc_NtkMapOTO( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose )
+{
+    static int fUseMulti = 0;
+    int fShowSwitching = 1;
+    Abc_Ntk_t * pNtkNew;
+    Map_Man_t * pMan;
+    Vec_Int_t * vSwitching = NULL;
+    float * pSwitching = NULL;
+    abctime clk, clkTotal = Abc_Clock();
+    Mio_Library_t * pLib = (Mio_Library_t *)Abc_FrameReadLibGen();
+
+    assert( Abc_NtkIsStrash(pNtk) );
+    // derive library from SCL
+    if ( Abc_FrameReadLibScl() && Abc_SclHasDelayInfo( Abc_FrameReadLibScl() ) )
+    {
+        if ( pLib && Mio_LibraryHasProfile(pLib) )
+            pLib = Abc_SclDeriveGenlib( Abc_FrameReadLibScl(), pLib, Slew, Gain, nGatesMin, fVerbose );
+        else
+            pLib = Abc_SclDeriveGenlib( Abc_FrameReadLibScl(), NULL, Slew, Gain, nGatesMin, fVerbose );
+        if ( Abc_FrameReadLibGen() )
+        {
+            Mio_LibraryTransferDelays( (Mio_Library_t *)Abc_FrameReadLibGen(), pLib );
+            Mio_LibraryTransferProfile( pLib, (Mio_Library_t *)Abc_FrameReadLibGen() );
+        }
+        // remove supergate library
+        Map_SuperLibFree( (Map_SuperLib_t *)Abc_FrameReadLibSuper() );
+        Abc_FrameSetLibSuper( NULL );
+    }
+
+    if ( userLib != NULL ) {
+        pLib = userLib;
+    }
+
+    // quit if there is no library
+    if ( pLib == NULL )
+    {
+        printf( "The current library is not available.\n" );
+        return NULL;
+    }
+    if ( AreaMulti != 0.0 )
+        fUseMulti = 1, printf( "The cell areas are multiplied by the factor: <num_fanins> ^ (%.2f).\n", AreaMulti );
+    if ( DelayMulti != 0.0 )
+        fUseMulti = 1, printf( "The cell delays are multiplied by the factor: <num_fanins> ^ (%.2f).\n", DelayMulti );
+
+    // penalize large gates by increasing their area
+    if ( AreaMulti != 0.0 )
+        Mio_LibraryMultiArea( pLib, AreaMulti );
+    if ( DelayMulti != 0.0 )
+        Mio_LibraryMultiDelay( pLib, DelayMulti );
+
+    // derive the supergate library
+    if ( fUseMulti || Abc_FrameReadLibSuper() == NULL )
+    {
+        if ( fVerbose )
+            printf( "Converting \"%s\" into supergate library \"%s\".\n", 
+                Mio_LibraryReadName(pLib), Extra_FileNameGenericAppend(Mio_LibraryReadName(pLib), ".super") );
+        if ( Mio_LibraryHasProfile(pLib) )
+            printf( "Abc_NtkMapOTO(): Genlib library has profile.\n" );
+        Map_SuperLibDeriveFromGenlib( pLib, fVerbose );
+    }
+
+    // return the library to normal
+    if ( AreaMulti != 0.0 )
+        Mio_LibraryMultiArea( (Mio_Library_t *)Abc_FrameReadLibGen(), -AreaMulti );
+    if ( DelayMulti != 0.0 )
+        Mio_LibraryMultiDelay( (Mio_Library_t *)Abc_FrameReadLibGen(), -DelayMulti );
+
+    // print a warning about choice nodes
+    if ( fVerbose && Abc_NtkGetChoiceNum( pNtk ) )
+        printf( "Performing mapping with choices.\n" );
+
+    // compute switching activity
+    fShowSwitching |= fSwitching;
+    if ( fShowSwitching )
+    {
+        extern Vec_Int_t * Sim_NtkComputeSwitching( Abc_Ntk_t * pNtk, int nPatterns );
+        vSwitching = Sim_NtkComputeSwitching( pNtk, 4096 );
+        pSwitching = (float *)vSwitching->pArray;
+    }
+
+    // perform the mapping
+    pMan = Abc_NtkToMap( pNtk, DelayTarget, fRecovery, pSwitching, fVerbose );
+    if ( pSwitching ) Vec_IntFree( vSwitching );
+    if ( pMan == NULL )
+        return NULL;
+clk = Abc_Clock();
+    Map_ManSetSwitching( pMan, fSwitching );
+    Map_ManSetSkipFanout( pMan, fSkipFanout );
+    if ( fUseProfile )
+        Map_ManSetUseProfile( pMan );
+    if ( LogFan != 0 )
+        Map_ManCreateNodeDelays( pMan, LogFan );
+    if ( !Map_Mapping_OTO( pMan ) )
+    {
+        Map_ManFree( pMan );
+        return NULL;
+    }
+
+    // reconstruct the network after mapping (use buffers when user requested or in the area mode)
+    pNtkNew = Abc_NtkFromMap( pMan, pNtk, fUseBuffs || (DelayTarget == (double)ABC_INFINITY) );
+    if ( Mio_LibraryHasProfile(pLib) )
+        Mio_LibraryTransferProfile2( (Mio_Library_t *)Abc_FrameReadLibGen(), pLib );
+    Map_ManFree( pMan );
+    if ( pNtkNew == NULL )
+        return NULL;
+
+    if ( pNtk->pExdc )
+        pNtkNew->pExdc = Abc_NtkDup( pNtk->pExdc );
+if ( fVerbose )
+{
+ABC_PRT( "Total runtime", Abc_Clock() - clkTotal );
+}
+
+    // make sure that everything is okay
+    if ( !Abc_NtkCheck( pNtkNew ) )
+    {
+        printf( "Abc_NtkMapOTO: The network check has failed.\n" );
+        Abc_NtkDelete( pNtkNew );
+        return NULL;
+    }
+    return pNtkNew;
+}
+
+/**Function*************************************************************
+
   Synopsis    [Load the network into manager.]
 
   Description []

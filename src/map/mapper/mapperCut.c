@@ -30,6 +30,11 @@ ABC_NAMESPACE_IMPL_START
 // the largest number of cuts used
 #define  MAP_CUTS_MAX_USE       250
 
+// the largest number of cuts considered (one-to-one mapping)
+#define  MAP_CUTS_MAX_COMPUTE_OTO   10
+// the largest number of cuts used (one-to-one mapping)
+#define  MAP_CUTS_MAX_USE_OTO       10
+
 // temporary hash table to store the cuts
 typedef struct Map_CutTableStrutct_t Map_CutTable_t;
 struct Map_CutTableStrutct_t
@@ -177,6 +182,61 @@ void Map_MappingCuts( Map_Man_t * p )
     int nCuts, nNodes, i;
     abctime clk = Abc_Clock();
     // set the elementary cuts for the PI variables
+    assert( p->nVarsMax > 1 && p->nVarsMax < 7 );
+    for ( i = 0; i < p->nInputs; i++ )
+        Map_MappingCutsInput( p, p->pInputs[i] );
+
+    // compute the cuts for the internal nodes
+    nNodes = p->vMapObjs->nSize;
+    pProgress = Extra_ProgressBarStart( stdout, nNodes );
+    pTable = Map_CutTableStart( p );
+    for ( i = 0; i < nNodes; i++ )
+    {
+        pNode = p->vMapObjs->pArray[i];
+        if ( Map_NodeIsBuf(pNode) )
+            Map_MappingCutsInput( p, pNode );
+        else if ( Map_NodeIsAnd(pNode) )
+            Map_CutCompute( p, pTable, pNode );
+        else continue;
+        Extra_ProgressBarUpdate( pProgress, i, "Cuts ..." );
+    }
+    Extra_ProgressBarStop( pProgress );
+    Map_CutTableStop( pTable );
+
+    // report the stats
+    if ( p->fVerbose )
+    {
+        nCuts = Map_MappingCountAllCuts(p);
+        printf( "Nodes = %6d.  Total %d-feasible cuts = %10d.  Per node = %.1f. ", 
+               p->nNodes, p->nVarsMax, nCuts, ((float)nCuts)/p->nNodes );
+        ABC_PRT( "Time", Abc_Clock() - clk );
+    }
+
+    // print the cuts for the first primary output
+//    Map_CutListPrint( p, Map_Regular(p->pOutputs[0]) );
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Computes the cuts for each node (one-to-one mapping, K=2).]
+
+  Description [Same as Map_MappingCuts() but forces nVarsMax = 2.]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Map_MappingCuts_OTO( Map_Man_t * p )
+{
+    ProgressBar * pProgress;
+    Map_CutTable_t * pTable;
+    Map_Node_t * pNode;
+    int nCuts, nNodes, i;
+    abctime clk = Abc_Clock();
+    // set the elementary cuts for the PI variables
+    if ( p->nVarsMax != 2 )
+        p->nVarsMax = 2;
     assert( p->nVarsMax > 1 && p->nVarsMax < 7 );
     for ( i = 0; i < p->nInputs; i++ )
         Map_MappingCutsInput( p, p->pInputs[i] );
@@ -674,6 +734,25 @@ int Map_CutMergeTwo( Map_Cut_t * pCut1, Map_Cut_t * pCut2, Map_Node_t * ppNodes[
     }
 
     return nTotal;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Merges two cuts (one-to-one mapping, forces K=2).]
+
+  Description [Same as Map_CutMergeTwo() but forces nNodesMax = 2.]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Map_CutMergeTwo_OTO( Map_Cut_t * pCut1, Map_Cut_t * pCut2, Map_Node_t * ppNodes[], int nNodesMax )
+{
+    // force 2-input
+    if ( nNodesMax > 2 )
+        nNodesMax = 2;
+    return Map_CutMergeTwo( pCut1, pCut2, ppNodes, nNodesMax );
 }
 
 /**Function*************************************************************
