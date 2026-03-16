@@ -227,5 +227,24 @@ ABC_PRT( "Time", Abc_Clock() - clk );
         Map_MappingPrintOutputArrivals( p );
     return 1;
 }
+
+/**Function*************************************************************
+
+  Synopsis    [Performs one-to-one technology mapping (K=2) for the given object graph.]
+
+  Description [Forces nVarsMax to 2 (one-to-one mapping) before running
+  the standard technology mapping algorithm.]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Map_Mapping_OTO( Map_Man_t * p )
+{
+    if ( p->nVarsMax > 2 )
+        p->nVarsMax = 2;
+    return Map_Mapping( p );
+}
 ABC_NAMESPACE_IMPL_END
 
