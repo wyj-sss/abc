@@ -173,6 +173,7 @@ extern void            Map_CutCreateFromNode( Map_Man_t * p, Map_Super_t * pSupe
 extern Vec_Ptr_t *     Map_CutInternalNodes( Map_Node_t * pObj, Map_Cut_t * pCut );
 /*=== mapperCore.c =============================================================*/
 extern int             Map_Mapping( Map_Man_t * p );
+extern int             Map_Mapping_OTO( Map_Man_t * p );
 /*=== mapperLib.c =============================================================*/
 extern int             Map_SuperLibDeriveFromGenlib( Mio_Library_t * pLib, int fVerbose );
 extern void            Map_SuperLibFree( Map_SuperLib_t * p );
