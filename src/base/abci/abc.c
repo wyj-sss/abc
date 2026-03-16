@@ -297,6 +297,7 @@ static int Abc_CommandRecDump3               ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandRecMerge3              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 
 static int Abc_CommandMap                    ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandMapOto                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAmap                   ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandPhaseMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandStochMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -1139,6 +1140,7 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "Choicing",     "rec_merge3",    Abc_CommandRecMerge3,        0 );
 
     Cmd_CommandAdd( pAbc, "SC mapping",   "map",           Abc_CommandMap,              1 );
+    Cmd_CommandAdd( pAbc, "SC mapping",   "map_oto",       Abc_CommandMapOto,           1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "amap",          Abc_CommandAmap,             1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "phase_map",     Abc_CommandPhaseMap,         1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "stochmap",      Abc_CommandStochMap,         1 );
@@ -21024,6 +21026,245 @@ usage:
     Abc_Print( -2, "\t-M num   : skip gate classes whose size is less than this [default = %d]\n", nGatesMin );
     Abc_Print( -2, "\t-a       : toggles area-only mapping [default = %s]\n", fAreaOnly? "yes": "no" );
     Abc_Print( -2, "\t-r       : toggles area recovery [default = %s]\n", fRecovery? "yes": "no" );
+    Abc_Print( -2, "\t-s       : toggles sweep after mapping [default = %s]\n", fSweep? "yes": "no" );
+    Abc_Print( -2, "\t-p       : optimizes power by minimizing switching [default = %s]\n", fSwitching? "yes": "no" );
+    Abc_Print( -2, "\t-f       : do not use large gates to map high-fanout nodes [default = %s]\n", fSkipFanout? "yes": "no" );
+    Abc_Print( -2, "\t-u       : use standard-cell profile [default = %s]\n", fUseProfile? "yes": "no" );
+    Abc_Print( -2, "\t-o       : toggles using buffers to decouple combinational outputs [default = %s]\n", fUseBuffs? "yes": "no" );
+    Abc_Print( -2, "\t-v       : toggles verbose output [default = %s]\n", fVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-h       : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Command procedure for one-to-one (K=2) standard cell mapping.]
+
+  Description [Performs standard cell mapping using K=2 (one-to-one mode),
+               where each AIG node is mapped to a 2-input standard cell.
+               Area recovery is disabled to match one-to-one mapping semantics.]
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    Abc_Ntk_t * pNtk, * pNtkRes;
+    char Buffer[100];
+    double DelayTarget;
+    double AreaMulti;
+    double DelayMulti;
+    float LogFan = 0;
+    float Slew = 0; // choose based on the library
+    float Gain = 250;
+    int nGatesMin = 0;
+    int fAreaOnly;
+    int fSweep;
+    int fSwitching;
+    int fSkipFanout;
+    int fUseProfile;
+    int fUseBuffs;
+    int fVerbose;
+    int c;
+    extern Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+    extern int Abc_NtkFraigSweep( Abc_Ntk_t * pNtk, int fUseInv, int fExdc, int fVerbose, int fVeryVerbose );
+
+    pNtk = Abc_FrameReadNtk(pAbc);
+    // set defaults
+    DelayTarget =-1;
+    AreaMulti   = 0;
+    DelayMulti  = 0;
+    fAreaOnly   = 0;
+    fSweep      = 0;
+    fSwitching  = 0;
+    fSkipFanout = 0;
+    fUseProfile = 0;
+    fUseBuffs   = 0;
+    fVerbose    = 0;
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "DABFSGMaspfuovh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'D':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-D\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            DelayTarget = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( DelayTarget <= 0.0 )
+                goto usage;
+            break;
+        case 'A':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-A\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            AreaMulti = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            break;
+        case 'B':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-B\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            DelayMulti = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            break;
+        case 'F':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-F\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            LogFan = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( LogFan < 0.0 )
+                goto usage;
+            break;
+        case 'S':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-S\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            Slew = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( Slew <= 0.0 )
+                goto usage;
+            break;
+        case 'G':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-G\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            Gain = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( Gain <= 0.0 )
+                goto usage;
+            break;
+        case 'M':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-M\" should be followed by a positive integer.\n" );
+                goto usage;
+            }
+            nGatesMin = atoi(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( nGatesMin < 0 )
+                goto usage;
+            break;
+        case 'a':
+            fAreaOnly ^= 1;
+            break;
+        case 's':
+            fSweep ^= 1;
+            break;
+        case 'p':
+            fSwitching ^= 1;
+            break;
+        case 'f':
+            fSkipFanout ^= 1;
+            break;
+        case 'u':
+            fUseProfile ^= 1;
+            break;
+        case 'o':
+            fUseBuffs ^= 1;
+            break;
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( pNtk == NULL )
+    {
+        Abc_Print( -1, "Empty network.\n" );
+        return 1;
+    }
+
+    if ( fAreaOnly )
+        DelayTarget = ABC_INFINITY;
+
+    if ( !Abc_NtkIsStrash(pNtk) )
+    {
+        pNtk = Abc_NtkStrash( pNtk, 0, 0, 0 );
+        if ( pNtk == NULL )
+        {
+            Abc_Print( -1, "Strashing before mapping has failed.\n" );
+            return 1;
+        }
+        pNtk = Abc_NtkBalance( pNtkRes = pNtk, 0, 0, 1 );
+        Abc_NtkDelete( pNtkRes );
+        if ( pNtk == NULL )
+        {
+            Abc_Print( -1, "Balancing before mapping has failed.\n" );
+            return 1;
+        }
+        Abc_Print( 0, "The network was strashed and balanced before mapping.\n" );
+        // get the new network
+        pNtkRes = Abc_NtkMapOto( pNtk, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        if ( pNtkRes == NULL )
+        {
+            Abc_NtkDelete( pNtk );
+            Abc_Print( -1, "Mapping has failed.\n" );
+            return 1;
+        }
+        Abc_NtkDelete( pNtk );
+    }
+    else
+    {
+        // get the new network
+        pNtkRes = Abc_NtkMapOto( pNtk, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        if ( pNtkRes == NULL )
+        {
+            Abc_Print( -1, "Mapping has failed.\n" );
+            return 1;
+        }
+    }
+
+    if ( fSweep )
+    {
+        Abc_NtkFraigSweep( pNtkRes, 0, 0, 0, 0 );
+        if ( Abc_NtkHasMapping(pNtkRes) )
+        {
+            pNtkRes = Abc_NtkDupDfs( pNtk = pNtkRes );
+            Abc_NtkDelete( pNtk );
+        }
+    }
+
+    // replace the current network
+    Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
+    return 0;
+
+usage:
+    if ( DelayTarget == -1 )
+        sprintf(Buffer, "not used" );
+    else
+        sprintf(Buffer, "%.3f", DelayTarget );
+    Abc_Print( -2, "usage: map_oto [-DABFSG float] [-M num] [-aspfuovh]\n" );
+    Abc_Print( -2, "\t           performs one-to-one (K=2) standard cell mapping of the current network\n" );
+    Abc_Print( -2, "\t           forces K=2 (each AIG node maps to one 2-input standard cell)\n" );
+    Abc_Print( -2, "\t-D float : sets the global required times [default = %s]\n", Buffer );
+    Abc_Print( -2, "\t-A float : \"area multiplier\" to bias gate selection [default = %.2f]\n", AreaMulti );
+    Abc_Print( -2, "\t-B float : \"delay multiplier\" to bias gate selection [default = %.2f]\n", DelayMulti );
+    Abc_Print( -2, "\t-F float : the logarithmic fanout delay parameter [default = %.2f]\n", LogFan );
+    Abc_Print( -2, "\t-S float : the slew parameter used to generate the library [default = %.2f]\n", Slew );
+    Abc_Print( -2, "\t-G float : the gain parameter used to generate the library [default = %.2f]\n", Gain );
+    Abc_Print( -2, "\t-M num   : skip gate classes whose size is less than this [default = %d]\n", nGatesMin );
+    Abc_Print( -2, "\t-a       : toggles area-only mapping [default = %s]\n", fAreaOnly? "yes": "no" );
     Abc_Print( -2, "\t-s       : toggles sweep after mapping [default = %s]\n", fSweep? "yes": "no" );
     Abc_Print( -2, "\t-p       : optimizes power by minimizing switching [default = %s]\n", fSwitching? "yes": "no" );
     Abc_Print( -2, "\t-f       : do not use large gates to map high-fanout nodes [default = %s]\n", fSkipFanout? "yes": "no" );
