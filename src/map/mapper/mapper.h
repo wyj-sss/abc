@@ -110,6 +110,7 @@ extern void            Map_ManSetVerbose( Map_Man_t * p, int fVerbose );
 extern void            Map_ManSetSwitching( Map_Man_t * p, int fSwitching );
 extern void            Map_ManSetSkipFanout( Map_Man_t * p, int fSkipFanout );
 extern void            Map_ManSetUseProfile( Map_Man_t * p );
+extern void            Map_ManSetVarsMax( Map_Man_t * p, int nVarsMax );
 extern void            Map_ManCreateAigIds( Map_Man_t * p, int nObjs );   
 
 extern Map_Man_t *     Map_NodeReadMan( Map_Node_t * p );

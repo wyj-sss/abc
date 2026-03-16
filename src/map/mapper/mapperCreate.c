@@ -75,6 +75,7 @@ void            Map_ManSetVerbose( Map_Man_t * p, int fVerbose )           { p->
 void            Map_ManSetSwitching( Map_Man_t * p, int fSwitching )       { p->fSwitching = fSwitching; }   
 void            Map_ManSetSkipFanout( Map_Man_t * p, int fSkipFanout )     { p->fSkipFanout = fSkipFanout; }   
 void            Map_ManSetUseProfile( Map_Man_t * p )                      { p->fUseProfile = 1;         }   
+void            Map_ManSetVarsMax( Map_Man_t * p, int nVarsMax )           { p->nVarsMax = nVarsMax;     }
 void            Map_ManCreateAigIds( Map_Man_t * p, int nObjs )            { p->pAigNodeIDs = ABC_CALLOC( int, nObjs ); }   
 
 /**Function*************************************************************
