@@ -1,0 +1,11 @@
+# Benchmark "c17_work/c17" written by ABC on Fri Mar 20 10:04:46 2026
+.model c17_work/c17
+.inputs G1 G3 G2 G4 G5
+.outputs G16 G17
+.gate NAND2_X1  A1=G1 A2=G3 ZN=new_n8
+.gate NAND2_X1  A1=G3 A2=G4 ZN=new_n10
+.gate NAND2_X1  A1=G2 A2=new_n10 ZN=new_n12
+.gate NAND2_X1  A1=new_n8 A2=new_n12 ZN=G16
+.gate NAND2_X1  A1=G5 A2=new_n10 ZN=new_n16
+.gate NAND2_X1  A1=new_n12 A2=new_n16 ZN=G17
+.end

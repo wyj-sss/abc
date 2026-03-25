@@ -1,0 +1,53 @@
+source -s abc.rc
+read C17.aig
+write_dot c17_aig_detail.dot -aig -detail
+write_dot c17_aig_detail.dot
+read_verilog c17_mapped.v
+strash
+write_dot c17_mapped.dot
+read c17.aig
+cut_compute -k 2 -n 9
+cut_print -n 9
+read_aiger c17_work/c17.aig
+read_aiger c17.aig
+read_lib ./NangateOpenCellLibrary_typical.lib
+read_lib abc/NangateOpenCellLibrary_typical.lib
+read_lib NangateOpenCellLibrary_typical.lib
+map_oto -v
+write_blif c17_oto.blif
+read c17_work/c17.aig
+map -v
+write_blif c17_map.blif
+read c17_oto.blif
+cec c17_map.blif
+help
+source -s abc.rc
+read_aiger c17.aig
+read_lib NangateOpenCellLibrary_tipical.lib
+abc> read_lib NangateOpenCellLibrary_typical.lib
+read_lib NangateOpenCellLibrary_typical.lib
+map_oto -v
+mapper_extract -o /tmp/output.csv -v -s 3
+ps -a
+topo
+map -v
+mapper_extract -o /tmp/output.csv -v
+grep -r "Abc_NtkTimeComputeArrival" src/
+grep -r "Abc_NtkTimeComputeRequired" src/
+source -s abc.rc
+read c17_oto.blif
+read c17_map.blif
+read_aiger c17.aig
+read_lib NangateOpenCellLibrary_typical.lib
+read c17_mao.blif
+cec c17_map.blif                        
+read_blif c17_mapped.blif
+read_lib ../NangateOpenCellLibrary_typical.lib
+cec c17_one_to_one.blif
+map_oto
+write_verilog c17_oto.v
+write_blif c17_otoo.blif
+read c17_oto.blif
+cec c17_map.blif
+mapper_extract -v -s 6
+read_aiger ./c499_work/c499_map.blif

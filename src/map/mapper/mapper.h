@@ -192,6 +192,10 @@ extern void            Map_ManCleanData( Map_Man_t * p );
 extern void            Map_MappingSetupTruthTables( unsigned uTruths[][2] );
 extern void            Map_MappingSetupTruthTablesLarge( unsigned uTruths[][32] );
 
+extern int             Map_Mapping_OTO( Map_Man_t * p );
+// 在最后添加
+extern int Mapper_CommandExtract( Abc_Frame_t * pAbc, int argc, char ** argv );
+
 
 
 ABC_NAMESPACE_HEADER_END

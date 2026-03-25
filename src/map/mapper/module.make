@@ -14,4 +14,5 @@ SRC +=  src/map/mapper/mapper.c \
     src/map/mapper/mapperTree.c \
     src/map/mapper/mapperTruth.c \
     src/map/mapper/mapperUtils.c \
-    src/map/mapper/mapperVec.c
+    src/map/mapper/mapperVec.c \
+    SRC += src/map/mapper/mapperExtract.c     # ← 【新增这一行】

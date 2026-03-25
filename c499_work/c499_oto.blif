@@ -1,0 +1,551 @@
+# Benchmark "c499_work/c499" written by ABC on Fri Mar 20 10:04:46 2026
+.model c499_work/c499
+.inputs G14 G2 G6 G10 G34 G41 G25 G26 G27 G28 G29 G30 G31 G32 G4 G8 G12 G16 \
+ G36 G21 G22 G23 G24 G3 G7 G11 G15 G35 G17 G18 G19 G20 G1 G5 G9 G13 G33 G40 \
+ G39 G38 G37
+.outputs G481 G482 G480 G468 G469 G470 G471 G472 G473 G474 G475 G476 G477 \
+ G478 G479 G483 G484 G485 G486 G487 G488 G489 G490 G491 G492 G493 G494 G495 \
+ G496 G497 G498 G499
+.gate INV_X1    A=G2 ZN=new_n74
+.gate NAND2_X1  A1=new_n74 A2=G6 ZN=new_n75
+.gate INV_X1    A=G6 ZN=new_n77
+.gate NAND2_X1  A1=G2 A2=new_n77 ZN=new_n78
+.gate NAND2_X1  A1=new_n75 A2=new_n78 ZN=new_n80
+.gate INV_X1    A=new_n80 ZN=new_n81
+.gate INV_X1    A=G10 ZN=new_n82
+.gate NAND2_X1  A1=G14 A2=new_n82 ZN=new_n83
+.gate INV_X1    A=G14 ZN=new_n85
+.gate NAND2_X1  A1=new_n85 A2=G10 ZN=new_n86
+.gate NAND2_X1  A1=new_n83 A2=new_n86 ZN=new_n88
+.gate INV_X1    A=new_n88 ZN=new_n89
+.gate NAND2_X1  A1=new_n81 A2=new_n88 ZN=new_n90
+.gate NAND2_X1  A1=new_n80 A2=new_n89 ZN=new_n92
+.gate NAND2_X1  A1=new_n90 A2=new_n92 ZN=new_n94
+.gate INV_X1    A=new_n94 ZN=new_n95
+.gate NAND2_X1  A1=G34 A2=G41 ZN=new_n96
+.gate INV_X1    A=new_n96 ZN=new_n97
+.gate INV_X1    A=G25 ZN=new_n98
+.gate NAND2_X1  A1=new_n98 A2=G26 ZN=new_n99
+.gate INV_X1    A=G26 ZN=new_n101
+.gate NAND2_X1  A1=G25 A2=new_n101 ZN=new_n102
+.gate NAND2_X1  A1=new_n99 A2=new_n102 ZN=new_n104
+.gate INV_X1    A=new_n104 ZN=new_n105
+.gate INV_X1    A=G27 ZN=new_n106
+.gate NAND2_X1  A1=new_n106 A2=G28 ZN=new_n107
+.gate INV_X1    A=G28 ZN=new_n109
+.gate NAND2_X1  A1=G27 A2=new_n109 ZN=new_n110
+.gate NAND2_X1  A1=new_n107 A2=new_n110 ZN=new_n112
+.gate INV_X1    A=new_n112 ZN=new_n113
+.gate NAND2_X1  A1=new_n105 A2=new_n112 ZN=new_n114
+.gate NAND2_X1  A1=new_n104 A2=new_n113 ZN=new_n116
+.gate NAND2_X1  A1=new_n114 A2=new_n116 ZN=new_n118
+.gate INV_X1    A=new_n118 ZN=new_n119
+.gate INV_X1    A=G29 ZN=new_n120
+.gate NAND2_X1  A1=new_n120 A2=G30 ZN=new_n121
+.gate INV_X1    A=G30 ZN=new_n123
+.gate NAND2_X1  A1=G29 A2=new_n123 ZN=new_n124
+.gate NAND2_X1  A1=new_n121 A2=new_n124 ZN=new_n126
+.gate INV_X1    A=new_n126 ZN=new_n127
+.gate INV_X1    A=G31 ZN=new_n128
+.gate NAND2_X1  A1=new_n128 A2=G32 ZN=new_n129
+.gate INV_X1    A=G32 ZN=new_n131
+.gate NAND2_X1  A1=G31 A2=new_n131 ZN=new_n132
+.gate NAND2_X1  A1=new_n129 A2=new_n132 ZN=new_n134
+.gate INV_X1    A=new_n134 ZN=new_n135
+.gate NAND2_X1  A1=new_n127 A2=new_n134 ZN=new_n136
+.gate NAND2_X1  A1=new_n126 A2=new_n135 ZN=new_n138
+.gate NAND2_X1  A1=new_n136 A2=new_n138 ZN=new_n140
+.gate INV_X1    A=new_n140 ZN=new_n141
+.gate NAND2_X1  A1=new_n119 A2=new_n140 ZN=new_n142
+.gate NAND2_X1  A1=new_n118 A2=new_n141 ZN=new_n144
+.gate NAND2_X1  A1=new_n142 A2=new_n144 ZN=new_n146
+.gate INV_X1    A=new_n146 ZN=new_n147
+.gate NAND2_X1  A1=new_n96 A2=new_n146 ZN=new_n148
+.gate NAND2_X1  A1=new_n97 A2=new_n147 ZN=new_n150
+.gate NAND2_X1  A1=new_n148 A2=new_n150 ZN=new_n152
+.gate INV_X1    A=new_n152 ZN=new_n153
+.gate NAND2_X1  A1=new_n95 A2=new_n152 ZN=new_n154
+.gate NAND2_X1  A1=new_n94 A2=new_n153 ZN=new_n156
+.gate NAND2_X1  A1=new_n154 A2=new_n156 ZN=new_n158
+.gate INV_X1    A=new_n158 ZN=new_n159
+.gate INV_X1    A=G4 ZN=new_n160
+.gate NAND2_X1  A1=new_n160 A2=G8 ZN=new_n161
+.gate INV_X1    A=G8 ZN=new_n163
+.gate NAND2_X1  A1=G4 A2=new_n163 ZN=new_n164
+.gate NAND2_X1  A1=new_n161 A2=new_n164 ZN=new_n166
+.gate INV_X1    A=new_n166 ZN=new_n167
+.gate INV_X1    A=G12 ZN=new_n168
+.gate NAND2_X1  A1=new_n168 A2=G16 ZN=new_n169
+.gate INV_X1    A=G16 ZN=new_n171
+.gate NAND2_X1  A1=G12 A2=new_n171 ZN=new_n172
+.gate NAND2_X1  A1=new_n169 A2=new_n172 ZN=new_n174
+.gate INV_X1    A=new_n174 ZN=new_n175
+.gate NAND2_X1  A1=new_n167 A2=new_n174 ZN=new_n176
+.gate NAND2_X1  A1=new_n166 A2=new_n175 ZN=new_n178
+.gate NAND2_X1  A1=new_n176 A2=new_n178 ZN=new_n180
+.gate INV_X1    A=new_n180 ZN=new_n181
+.gate NAND2_X1  A1=G41 A2=G36 ZN=new_n182
+.gate INV_X1    A=new_n182 ZN=new_n183
+.gate INV_X1    A=G21 ZN=new_n184
+.gate NAND2_X1  A1=new_n184 A2=G22 ZN=new_n185
+.gate INV_X1    A=G22 ZN=new_n187
+.gate NAND2_X1  A1=G21 A2=new_n187 ZN=new_n188
+.gate NAND2_X1  A1=new_n185 A2=new_n188 ZN=new_n190
+.gate INV_X1    A=new_n190 ZN=new_n191
+.gate INV_X1    A=G23 ZN=new_n192
+.gate NAND2_X1  A1=new_n192 A2=G24 ZN=new_n193
+.gate INV_X1    A=G24 ZN=new_n195
+.gate NAND2_X1  A1=G23 A2=new_n195 ZN=new_n196
+.gate NAND2_X1  A1=new_n193 A2=new_n196 ZN=new_n198
+.gate INV_X1    A=new_n198 ZN=new_n199
+.gate NAND2_X1  A1=new_n191 A2=new_n198 ZN=new_n200
+.gate NAND2_X1  A1=new_n190 A2=new_n199 ZN=new_n202
+.gate NAND2_X1  A1=new_n200 A2=new_n202 ZN=new_n204
+.gate INV_X1    A=new_n204 ZN=new_n205
+.gate NAND2_X1  A1=new_n140 A2=new_n205 ZN=new_n206
+.gate NAND2_X1  A1=new_n141 A2=new_n204 ZN=new_n208
+.gate NAND2_X1  A1=new_n206 A2=new_n208 ZN=new_n210
+.gate INV_X1    A=new_n210 ZN=new_n211
+.gate NAND2_X1  A1=new_n182 A2=new_n210 ZN=new_n212
+.gate NAND2_X1  A1=new_n183 A2=new_n211 ZN=new_n214
+.gate NAND2_X1  A1=new_n212 A2=new_n214 ZN=new_n216
+.gate INV_X1    A=new_n216 ZN=new_n217
+.gate NAND2_X1  A1=new_n181 A2=new_n216 ZN=new_n218
+.gate NAND2_X1  A1=new_n180 A2=new_n217 ZN=new_n220
+.gate NAND2_X1  A1=new_n218 A2=new_n220 ZN=new_n222
+.gate INV_X1    A=new_n222 ZN=new_n223
+.gate INV_X1    A=G3 ZN=new_n224
+.gate NAND2_X1  A1=new_n224 A2=G7 ZN=new_n225
+.gate INV_X1    A=G7 ZN=new_n227
+.gate NAND2_X1  A1=G3 A2=new_n227 ZN=new_n228
+.gate NAND2_X1  A1=new_n225 A2=new_n228 ZN=new_n230
+.gate INV_X1    A=new_n230 ZN=new_n231
+.gate INV_X1    A=G11 ZN=new_n232
+.gate NAND2_X1  A1=new_n232 A2=G15 ZN=new_n233
+.gate INV_X1    A=G15 ZN=new_n235
+.gate NAND2_X1  A1=G11 A2=new_n235 ZN=new_n236
+.gate NAND2_X1  A1=new_n233 A2=new_n236 ZN=new_n238
+.gate INV_X1    A=new_n238 ZN=new_n239
+.gate NAND2_X1  A1=new_n231 A2=new_n238 ZN=new_n240
+.gate NAND2_X1  A1=new_n230 A2=new_n239 ZN=new_n242
+.gate NAND2_X1  A1=new_n240 A2=new_n242 ZN=new_n244
+.gate INV_X1    A=new_n244 ZN=new_n245
+.gate NAND2_X1  A1=G41 A2=G35 ZN=new_n246
+.gate INV_X1    A=new_n246 ZN=new_n247
+.gate INV_X1    A=G17 ZN=new_n248
+.gate NAND2_X1  A1=new_n248 A2=G18 ZN=new_n249
+.gate INV_X1    A=G18 ZN=new_n251
+.gate NAND2_X1  A1=G17 A2=new_n251 ZN=new_n252
+.gate NAND2_X1  A1=new_n249 A2=new_n252 ZN=new_n254
+.gate INV_X1    A=new_n254 ZN=new_n255
+.gate INV_X1    A=G19 ZN=new_n256
+.gate NAND2_X1  A1=new_n256 A2=G20 ZN=new_n257
+.gate INV_X1    A=G20 ZN=new_n259
+.gate NAND2_X1  A1=G19 A2=new_n259 ZN=new_n260
+.gate NAND2_X1  A1=new_n257 A2=new_n260 ZN=new_n262
+.gate INV_X1    A=new_n262 ZN=new_n263
+.gate NAND2_X1  A1=new_n255 A2=new_n262 ZN=new_n264
+.gate NAND2_X1  A1=new_n254 A2=new_n263 ZN=new_n266
+.gate NAND2_X1  A1=new_n264 A2=new_n266 ZN=new_n268
+.gate INV_X1    A=new_n268 ZN=new_n269
+.gate NAND2_X1  A1=new_n118 A2=new_n269 ZN=new_n270
+.gate NAND2_X1  A1=new_n119 A2=new_n268 ZN=new_n272
+.gate NAND2_X1  A1=new_n270 A2=new_n272 ZN=new_n274
+.gate INV_X1    A=new_n274 ZN=new_n275
+.gate NAND2_X1  A1=new_n246 A2=new_n274 ZN=new_n276
+.gate NAND2_X1  A1=new_n247 A2=new_n275 ZN=new_n278
+.gate NAND2_X1  A1=new_n276 A2=new_n278 ZN=new_n280
+.gate INV_X1    A=new_n280 ZN=new_n281
+.gate NAND2_X1  A1=new_n245 A2=new_n280 ZN=new_n282
+.gate NAND2_X1  A1=new_n244 A2=new_n281 ZN=new_n284
+.gate NAND2_X1  A1=new_n282 A2=new_n284 ZN=new_n286
+.gate INV_X1    A=new_n286 ZN=new_n287
+.gate AND2_X1   A1=new_n223 A2=new_n287 ZN=new_n288
+.gate INV_X1    A=G1 ZN=new_n290
+.gate NAND2_X1  A1=new_n290 A2=G5 ZN=new_n291
+.gate INV_X1    A=G5 ZN=new_n293
+.gate NAND2_X1  A1=G1 A2=new_n293 ZN=new_n294
+.gate NAND2_X1  A1=new_n291 A2=new_n294 ZN=new_n296
+.gate INV_X1    A=new_n296 ZN=new_n297
+.gate INV_X1    A=G9 ZN=new_n298
+.gate NAND2_X1  A1=new_n298 A2=G13 ZN=new_n299
+.gate INV_X1    A=G13 ZN=new_n301
+.gate NAND2_X1  A1=G9 A2=new_n301 ZN=new_n302
+.gate NAND2_X1  A1=new_n299 A2=new_n302 ZN=new_n304
+.gate INV_X1    A=new_n304 ZN=new_n305
+.gate NAND2_X1  A1=new_n297 A2=new_n304 ZN=new_n306
+.gate NAND2_X1  A1=new_n296 A2=new_n305 ZN=new_n308
+.gate NAND2_X1  A1=new_n306 A2=new_n308 ZN=new_n310
+.gate INV_X1    A=new_n310 ZN=new_n311
+.gate NAND2_X1  A1=G41 A2=G33 ZN=new_n312
+.gate INV_X1    A=new_n312 ZN=new_n313
+.gate NAND2_X1  A1=new_n204 A2=new_n269 ZN=new_n314
+.gate NAND2_X1  A1=new_n205 A2=new_n268 ZN=new_n316
+.gate NAND2_X1  A1=new_n314 A2=new_n316 ZN=new_n318
+.gate INV_X1    A=new_n318 ZN=new_n319
+.gate NAND2_X1  A1=new_n312 A2=new_n318 ZN=new_n320
+.gate NAND2_X1  A1=new_n313 A2=new_n319 ZN=new_n322
+.gate NAND2_X1  A1=new_n320 A2=new_n322 ZN=new_n324
+.gate INV_X1    A=new_n324 ZN=new_n325
+.gate NAND2_X1  A1=new_n311 A2=new_n324 ZN=new_n326
+.gate NAND2_X1  A1=new_n310 A2=new_n325 ZN=new_n328
+.gate NAND2_X1  A1=new_n326 A2=new_n328 ZN=new_n330
+.gate INV_X1    A=new_n330 ZN=new_n331
+.gate AND2_X1   A1=new_n159 A2=new_n330 ZN=new_n332
+.gate NAND2_X1  A1=new_n288 A2=new_n332 ZN=new_n334
+.gate AND2_X1   A1=new_n158 A2=new_n331 ZN=new_n336
+.gate NAND2_X1  A1=new_n288 A2=new_n336 ZN=new_n338
+.gate AND2_X1   A1=new_n334 A2=new_n338 ZN=new_n340
+.gate AND2_X1   A1=new_n223 A2=new_n286 ZN=new_n342
+.gate AND2_X1   A1=new_n159 A2=new_n331 ZN=new_n344
+.gate NAND2_X1  A1=new_n342 A2=new_n344 ZN=new_n346
+.gate AND2_X1   A1=new_n222 A2=new_n287 ZN=new_n348
+.gate NAND2_X1  A1=new_n344 A2=new_n348 ZN=new_n350
+.gate AND2_X1   A1=new_n346 A2=new_n350 ZN=new_n352
+.gate NAND2_X1  A1=new_n340 A2=new_n352 ZN=new_n354
+.gate NAND2_X1  A1=G24 A2=new_n259 ZN=new_n356
+.gate NAND2_X1  A1=new_n195 A2=G20 ZN=new_n358
+.gate NAND2_X1  A1=new_n356 A2=new_n358 ZN=new_n360
+.gate INV_X1    A=new_n360 ZN=new_n361
+.gate NAND2_X1  A1=new_n109 A2=G32 ZN=new_n362
+.gate NAND2_X1  A1=G28 A2=new_n131 ZN=new_n364
+.gate NAND2_X1  A1=new_n362 A2=new_n364 ZN=new_n366
+.gate INV_X1    A=new_n366 ZN=new_n367
+.gate NAND2_X1  A1=new_n361 A2=new_n366 ZN=new_n368
+.gate NAND2_X1  A1=new_n360 A2=new_n367 ZN=new_n370
+.gate NAND2_X1  A1=new_n368 A2=new_n370 ZN=new_n372
+.gate INV_X1    A=new_n372 ZN=new_n373
+.gate NAND2_X1  A1=G41 A2=G40 ZN=new_n374
+.gate INV_X1    A=new_n374 ZN=new_n375
+.gate NAND2_X1  A1=G6 A2=new_n293 ZN=new_n376
+.gate NAND2_X1  A1=new_n77 A2=G5 ZN=new_n378
+.gate NAND2_X1  A1=new_n376 A2=new_n378 ZN=new_n380
+.gate INV_X1    A=new_n380 ZN=new_n381
+.gate NAND2_X1  A1=G8 A2=new_n227 ZN=new_n382
+.gate NAND2_X1  A1=new_n163 A2=G7 ZN=new_n384
+.gate NAND2_X1  A1=new_n382 A2=new_n384 ZN=new_n386
+.gate INV_X1    A=new_n386 ZN=new_n387
+.gate NAND2_X1  A1=new_n381 A2=new_n386 ZN=new_n388
+.gate NAND2_X1  A1=new_n380 A2=new_n387 ZN=new_n390
+.gate NAND2_X1  A1=new_n388 A2=new_n390 ZN=new_n392
+.gate INV_X1    A=new_n392 ZN=new_n393
+.gate NAND2_X1  A1=G14 A2=new_n301 ZN=new_n394
+.gate NAND2_X1  A1=new_n85 A2=G13 ZN=new_n396
+.gate NAND2_X1  A1=new_n394 A2=new_n396 ZN=new_n398
+.gate INV_X1    A=new_n398 ZN=new_n399
+.gate NAND2_X1  A1=G16 A2=new_n235 ZN=new_n400
+.gate NAND2_X1  A1=new_n171 A2=G15 ZN=new_n402
+.gate NAND2_X1  A1=new_n400 A2=new_n402 ZN=new_n404
+.gate INV_X1    A=new_n404 ZN=new_n405
+.gate NAND2_X1  A1=new_n399 A2=new_n404 ZN=new_n406
+.gate NAND2_X1  A1=new_n398 A2=new_n405 ZN=new_n408
+.gate NAND2_X1  A1=new_n406 A2=new_n408 ZN=new_n410
+.gate INV_X1    A=new_n410 ZN=new_n411
+.gate NAND2_X1  A1=new_n393 A2=new_n410 ZN=new_n412
+.gate NAND2_X1  A1=new_n392 A2=new_n411 ZN=new_n414
+.gate NAND2_X1  A1=new_n412 A2=new_n414 ZN=new_n416
+.gate INV_X1    A=new_n416 ZN=new_n417
+.gate NAND2_X1  A1=new_n374 A2=new_n416 ZN=new_n418
+.gate NAND2_X1  A1=new_n375 A2=new_n417 ZN=new_n420
+.gate NAND2_X1  A1=new_n418 A2=new_n420 ZN=new_n422
+.gate INV_X1    A=new_n422 ZN=new_n423
+.gate NAND2_X1  A1=new_n373 A2=new_n422 ZN=new_n424
+.gate NAND2_X1  A1=new_n372 A2=new_n423 ZN=new_n426
+.gate NAND2_X1  A1=new_n424 A2=new_n426 ZN=new_n428
+.gate INV_X1    A=new_n428 ZN=new_n429
+.gate AND2_X1   A1=new_n354 A2=new_n428 ZN=new_n430
+.gate NAND2_X1  A1=G23 A2=new_n256 ZN=new_n432
+.gate NAND2_X1  A1=new_n192 A2=G19 ZN=new_n434
+.gate NAND2_X1  A1=new_n432 A2=new_n434 ZN=new_n436
+.gate INV_X1    A=new_n436 ZN=new_n437
+.gate NAND2_X1  A1=new_n106 A2=G31 ZN=new_n438
+.gate NAND2_X1  A1=G27 A2=new_n128 ZN=new_n440
+.gate NAND2_X1  A1=new_n438 A2=new_n440 ZN=new_n442
+.gate INV_X1    A=new_n442 ZN=new_n443
+.gate NAND2_X1  A1=new_n437 A2=new_n442 ZN=new_n444
+.gate NAND2_X1  A1=new_n436 A2=new_n443 ZN=new_n446
+.gate NAND2_X1  A1=new_n444 A2=new_n446 ZN=new_n448
+.gate INV_X1    A=new_n448 ZN=new_n449
+.gate NAND2_X1  A1=G41 A2=G39 ZN=new_n450
+.gate INV_X1    A=new_n450 ZN=new_n451
+.gate NAND2_X1  A1=G2 A2=new_n290 ZN=new_n452
+.gate NAND2_X1  A1=new_n74 A2=G1 ZN=new_n454
+.gate NAND2_X1  A1=new_n452 A2=new_n454 ZN=new_n456
+.gate INV_X1    A=new_n456 ZN=new_n457
+.gate NAND2_X1  A1=G4 A2=new_n224 ZN=new_n458
+.gate NAND2_X1  A1=new_n160 A2=G3 ZN=new_n460
+.gate NAND2_X1  A1=new_n458 A2=new_n460 ZN=new_n462
+.gate INV_X1    A=new_n462 ZN=new_n463
+.gate NAND2_X1  A1=new_n457 A2=new_n462 ZN=new_n464
+.gate NAND2_X1  A1=new_n456 A2=new_n463 ZN=new_n466
+.gate NAND2_X1  A1=new_n464 A2=new_n466 ZN=new_n468
+.gate INV_X1    A=new_n468 ZN=new_n469
+.gate NAND2_X1  A1=G10 A2=new_n298 ZN=new_n470
+.gate NAND2_X1  A1=new_n82 A2=G9 ZN=new_n472
+.gate NAND2_X1  A1=new_n470 A2=new_n472 ZN=new_n474
+.gate INV_X1    A=new_n474 ZN=new_n475
+.gate NAND2_X1  A1=G12 A2=new_n232 ZN=new_n476
+.gate NAND2_X1  A1=new_n168 A2=G11 ZN=new_n478
+.gate NAND2_X1  A1=new_n476 A2=new_n478 ZN=new_n480
+.gate INV_X1    A=new_n480 ZN=new_n481
+.gate NAND2_X1  A1=new_n475 A2=new_n480 ZN=new_n482
+.gate NAND2_X1  A1=new_n474 A2=new_n481 ZN=new_n484
+.gate NAND2_X1  A1=new_n482 A2=new_n484 ZN=new_n486
+.gate INV_X1    A=new_n486 ZN=new_n487
+.gate NAND2_X1  A1=new_n469 A2=new_n486 ZN=new_n488
+.gate NAND2_X1  A1=new_n468 A2=new_n487 ZN=new_n490
+.gate NAND2_X1  A1=new_n488 A2=new_n490 ZN=new_n492
+.gate INV_X1    A=new_n492 ZN=new_n493
+.gate NAND2_X1  A1=new_n450 A2=new_n492 ZN=new_n494
+.gate NAND2_X1  A1=new_n451 A2=new_n493 ZN=new_n496
+.gate NAND2_X1  A1=new_n494 A2=new_n496 ZN=new_n498
+.gate INV_X1    A=new_n498 ZN=new_n499
+.gate NAND2_X1  A1=new_n449 A2=new_n498 ZN=new_n500
+.gate NAND2_X1  A1=new_n448 A2=new_n499 ZN=new_n502
+.gate NAND2_X1  A1=new_n500 A2=new_n502 ZN=new_n504
+.gate INV_X1    A=new_n504 ZN=new_n505
+.gate NAND2_X1  A1=G22 A2=new_n251 ZN=new_n506
+.gate NAND2_X1  A1=new_n187 A2=G18 ZN=new_n508
+.gate NAND2_X1  A1=new_n506 A2=new_n508 ZN=new_n510
+.gate INV_X1    A=new_n510 ZN=new_n511
+.gate NAND2_X1  A1=new_n101 A2=G30 ZN=new_n512
+.gate NAND2_X1  A1=G26 A2=new_n123 ZN=new_n514
+.gate NAND2_X1  A1=new_n512 A2=new_n514 ZN=new_n516
+.gate INV_X1    A=new_n516 ZN=new_n517
+.gate NAND2_X1  A1=new_n511 A2=new_n516 ZN=new_n518
+.gate NAND2_X1  A1=new_n510 A2=new_n517 ZN=new_n520
+.gate NAND2_X1  A1=new_n518 A2=new_n520 ZN=new_n522
+.gate INV_X1    A=new_n522 ZN=new_n523
+.gate NAND2_X1  A1=G41 A2=G38 ZN=new_n524
+.gate INV_X1    A=new_n524 ZN=new_n525
+.gate NAND2_X1  A1=new_n410 A2=new_n487 ZN=new_n526
+.gate NAND2_X1  A1=new_n411 A2=new_n486 ZN=new_n528
+.gate NAND2_X1  A1=new_n526 A2=new_n528 ZN=new_n530
+.gate INV_X1    A=new_n530 ZN=new_n531
+.gate NAND2_X1  A1=new_n524 A2=new_n530 ZN=new_n532
+.gate NAND2_X1  A1=new_n525 A2=new_n531 ZN=new_n534
+.gate NAND2_X1  A1=new_n532 A2=new_n534 ZN=new_n536
+.gate INV_X1    A=new_n536 ZN=new_n537
+.gate NAND2_X1  A1=new_n523 A2=new_n536 ZN=new_n538
+.gate NAND2_X1  A1=new_n522 A2=new_n537 ZN=new_n540
+.gate NAND2_X1  A1=new_n538 A2=new_n540 ZN=new_n542
+.gate INV_X1    A=new_n542 ZN=new_n543
+.gate NAND2_X1  A1=G21 A2=new_n248 ZN=new_n544
+.gate NAND2_X1  A1=new_n184 A2=G17 ZN=new_n546
+.gate NAND2_X1  A1=new_n544 A2=new_n546 ZN=new_n548
+.gate INV_X1    A=new_n548 ZN=new_n549
+.gate NAND2_X1  A1=new_n98 A2=G29 ZN=new_n550
+.gate NAND2_X1  A1=G25 A2=new_n120 ZN=new_n552
+.gate NAND2_X1  A1=new_n550 A2=new_n552 ZN=new_n554
+.gate INV_X1    A=new_n554 ZN=new_n555
+.gate NAND2_X1  A1=new_n549 A2=new_n554 ZN=new_n556
+.gate NAND2_X1  A1=new_n548 A2=new_n555 ZN=new_n558
+.gate NAND2_X1  A1=new_n556 A2=new_n558 ZN=new_n560
+.gate INV_X1    A=new_n560 ZN=new_n561
+.gate NAND2_X1  A1=G41 A2=G37 ZN=new_n562
+.gate INV_X1    A=new_n562 ZN=new_n563
+.gate NAND2_X1  A1=new_n392 A2=new_n469 ZN=new_n564
+.gate NAND2_X1  A1=new_n393 A2=new_n468 ZN=new_n566
+.gate NAND2_X1  A1=new_n564 A2=new_n566 ZN=new_n568
+.gate INV_X1    A=new_n568 ZN=new_n569
+.gate NAND2_X1  A1=new_n562 A2=new_n568 ZN=new_n570
+.gate NAND2_X1  A1=new_n563 A2=new_n569 ZN=new_n572
+.gate NAND2_X1  A1=new_n570 A2=new_n572 ZN=new_n574
+.gate INV_X1    A=new_n574 ZN=new_n575
+.gate NAND2_X1  A1=new_n561 A2=new_n574 ZN=new_n576
+.gate NAND2_X1  A1=new_n560 A2=new_n575 ZN=new_n578
+.gate NAND2_X1  A1=new_n576 A2=new_n578 ZN=new_n580
+.gate INV_X1    A=new_n580 ZN=new_n581
+.gate AND2_X1   A1=new_n542 A2=new_n581 ZN=new_n582
+.gate AND2_X1   A1=new_n505 A2=new_n582 ZN=new_n584
+.gate AND2_X1   A1=new_n430 A2=new_n584 ZN=new_n586
+.gate NAND2_X1  A1=new_n158 A2=new_n586 ZN=new_n588
+.gate INV_X1    A=new_n588 ZN=new_n589
+.gate NAND2_X1  A1=new_n85 A2=new_n589 ZN=new_n590
+.gate NAND2_X1  A1=G14 A2=new_n588 ZN=new_n592
+.gate NAND2_X1  A1=new_n590 A2=new_n592 ZN=G481
+.gate NAND2_X1  A1=new_n286 A2=new_n586 ZN=new_n596
+.gate INV_X1    A=new_n596 ZN=new_n597
+.gate NAND2_X1  A1=new_n235 A2=new_n597 ZN=new_n598
+.gate NAND2_X1  A1=G15 A2=new_n596 ZN=new_n600
+.gate NAND2_X1  A1=new_n598 A2=new_n600 ZN=G482
+.gate NAND2_X1  A1=new_n330 A2=new_n586 ZN=new_n604
+.gate INV_X1    A=new_n604 ZN=new_n605
+.gate NAND2_X1  A1=new_n301 A2=new_n605 ZN=new_n606
+.gate NAND2_X1  A1=G13 A2=new_n604 ZN=new_n608
+.gate NAND2_X1  A1=new_n606 A2=new_n608 ZN=G480
+.gate AND2_X1   A1=new_n354 A2=new_n429 ZN=new_n612
+.gate AND2_X1   A1=new_n543 A2=new_n580 ZN=new_n614
+.gate AND2_X1   A1=new_n504 A2=new_n614 ZN=new_n616
+.gate AND2_X1   A1=new_n612 A2=new_n616 ZN=new_n618
+.gate NAND2_X1  A1=new_n330 A2=new_n618 ZN=new_n620
+.gate INV_X1    A=new_n620 ZN=new_n621
+.gate NAND2_X1  A1=new_n290 A2=new_n621 ZN=new_n622
+.gate NAND2_X1  A1=G1 A2=new_n620 ZN=new_n624
+.gate NAND2_X1  A1=new_n622 A2=new_n624 ZN=G468
+.gate NAND2_X1  A1=new_n158 A2=new_n618 ZN=new_n628
+.gate INV_X1    A=new_n628 ZN=new_n629
+.gate NAND2_X1  A1=new_n74 A2=new_n629 ZN=new_n630
+.gate NAND2_X1  A1=G2 A2=new_n628 ZN=new_n632
+.gate NAND2_X1  A1=new_n630 A2=new_n632 ZN=G469
+.gate NAND2_X1  A1=new_n286 A2=new_n618 ZN=new_n636
+.gate INV_X1    A=new_n636 ZN=new_n637
+.gate NAND2_X1  A1=new_n224 A2=new_n637 ZN=new_n638
+.gate NAND2_X1  A1=G3 A2=new_n636 ZN=new_n640
+.gate NAND2_X1  A1=new_n638 A2=new_n640 ZN=G470
+.gate NAND2_X1  A1=new_n222 A2=new_n618 ZN=new_n644
+.gate INV_X1    A=new_n644 ZN=new_n645
+.gate NAND2_X1  A1=new_n160 A2=new_n645 ZN=new_n646
+.gate NAND2_X1  A1=G4 A2=new_n644 ZN=new_n648
+.gate NAND2_X1  A1=new_n646 A2=new_n648 ZN=G471
+.gate AND2_X1   A1=new_n505 A2=new_n614 ZN=new_n652
+.gate AND2_X1   A1=new_n430 A2=new_n652 ZN=new_n654
+.gate NAND2_X1  A1=new_n330 A2=new_n654 ZN=new_n656
+.gate INV_X1    A=new_n656 ZN=new_n657
+.gate NAND2_X1  A1=new_n293 A2=new_n657 ZN=new_n658
+.gate NAND2_X1  A1=G5 A2=new_n656 ZN=new_n660
+.gate NAND2_X1  A1=new_n658 A2=new_n660 ZN=G472
+.gate NAND2_X1  A1=new_n158 A2=new_n654 ZN=new_n664
+.gate INV_X1    A=new_n664 ZN=new_n665
+.gate NAND2_X1  A1=new_n77 A2=new_n665 ZN=new_n666
+.gate NAND2_X1  A1=G6 A2=new_n664 ZN=new_n668
+.gate NAND2_X1  A1=new_n666 A2=new_n668 ZN=G473
+.gate NAND2_X1  A1=new_n286 A2=new_n654 ZN=new_n672
+.gate INV_X1    A=new_n672 ZN=new_n673
+.gate NAND2_X1  A1=new_n227 A2=new_n673 ZN=new_n674
+.gate NAND2_X1  A1=G7 A2=new_n672 ZN=new_n676
+.gate NAND2_X1  A1=new_n674 A2=new_n676 ZN=G474
+.gate NAND2_X1  A1=new_n222 A2=new_n654 ZN=new_n680
+.gate INV_X1    A=new_n680 ZN=new_n681
+.gate NAND2_X1  A1=new_n163 A2=new_n681 ZN=new_n682
+.gate NAND2_X1  A1=G8 A2=new_n680 ZN=new_n684
+.gate NAND2_X1  A1=new_n682 A2=new_n684 ZN=G475
+.gate AND2_X1   A1=new_n504 A2=new_n582 ZN=new_n688
+.gate AND2_X1   A1=new_n612 A2=new_n688 ZN=new_n690
+.gate NAND2_X1  A1=new_n330 A2=new_n690 ZN=new_n692
+.gate INV_X1    A=new_n692 ZN=new_n693
+.gate NAND2_X1  A1=new_n298 A2=new_n693 ZN=new_n694
+.gate NAND2_X1  A1=G9 A2=new_n692 ZN=new_n696
+.gate NAND2_X1  A1=new_n694 A2=new_n696 ZN=G476
+.gate NAND2_X1  A1=new_n158 A2=new_n690 ZN=new_n700
+.gate INV_X1    A=new_n700 ZN=new_n701
+.gate NAND2_X1  A1=new_n82 A2=new_n701 ZN=new_n702
+.gate NAND2_X1  A1=G10 A2=new_n700 ZN=new_n704
+.gate NAND2_X1  A1=new_n702 A2=new_n704 ZN=G477
+.gate NAND2_X1  A1=new_n286 A2=new_n690 ZN=new_n708
+.gate INV_X1    A=new_n708 ZN=new_n709
+.gate NAND2_X1  A1=new_n232 A2=new_n709 ZN=new_n710
+.gate NAND2_X1  A1=G11 A2=new_n708 ZN=new_n712
+.gate NAND2_X1  A1=new_n710 A2=new_n712 ZN=G478
+.gate NAND2_X1  A1=new_n222 A2=new_n690 ZN=new_n716
+.gate INV_X1    A=new_n716 ZN=new_n717
+.gate NAND2_X1  A1=new_n168 A2=new_n717 ZN=new_n718
+.gate NAND2_X1  A1=G12 A2=new_n716 ZN=new_n720
+.gate NAND2_X1  A1=new_n718 A2=new_n720 ZN=G479
+.gate NAND2_X1  A1=new_n222 A2=new_n586 ZN=new_n724
+.gate INV_X1    A=new_n724 ZN=new_n725
+.gate NAND2_X1  A1=new_n171 A2=new_n725 ZN=new_n726
+.gate NAND2_X1  A1=G16 A2=new_n724 ZN=new_n728
+.gate NAND2_X1  A1=new_n726 A2=new_n728 ZN=G483
+.gate AND2_X1   A1=new_n429 A2=new_n505 ZN=new_n732
+.gate NAND2_X1  A1=new_n614 A2=new_n732 ZN=new_n734
+.gate NAND2_X1  A1=new_n582 A2=new_n732 ZN=new_n736
+.gate AND2_X1   A1=new_n734 A2=new_n736 ZN=new_n738
+.gate AND2_X1   A1=new_n429 A2=new_n504 ZN=new_n740
+.gate AND2_X1   A1=new_n543 A2=new_n581 ZN=new_n742
+.gate NAND2_X1  A1=new_n740 A2=new_n742 ZN=new_n744
+.gate AND2_X1   A1=new_n428 A2=new_n505 ZN=new_n746
+.gate NAND2_X1  A1=new_n742 A2=new_n746 ZN=new_n748
+.gate AND2_X1   A1=new_n744 A2=new_n748 ZN=new_n750
+.gate NAND2_X1  A1=new_n738 A2=new_n750 ZN=new_n752
+.gate AND2_X1   A1=new_n223 A2=new_n752 ZN=new_n754
+.gate AND2_X1   A1=new_n286 A2=new_n332 ZN=new_n756
+.gate AND2_X1   A1=new_n754 A2=new_n756 ZN=new_n758
+.gate NAND2_X1  A1=new_n580 A2=new_n758 ZN=new_n760
+.gate INV_X1    A=new_n760 ZN=new_n761
+.gate NAND2_X1  A1=new_n248 A2=new_n761 ZN=new_n762
+.gate NAND2_X1  A1=G17 A2=new_n760 ZN=new_n764
+.gate NAND2_X1  A1=new_n762 A2=new_n764 ZN=G484
+.gate NAND2_X1  A1=new_n542 A2=new_n758 ZN=new_n768
+.gate INV_X1    A=new_n768 ZN=new_n769
+.gate NAND2_X1  A1=new_n251 A2=new_n769 ZN=new_n770
+.gate NAND2_X1  A1=G18 A2=new_n768 ZN=new_n772
+.gate NAND2_X1  A1=new_n770 A2=new_n772 ZN=G485
+.gate NAND2_X1  A1=new_n504 A2=new_n758 ZN=new_n776
+.gate INV_X1    A=new_n776 ZN=new_n777
+.gate NAND2_X1  A1=new_n256 A2=new_n777 ZN=new_n778
+.gate NAND2_X1  A1=G19 A2=new_n776 ZN=new_n780
+.gate NAND2_X1  A1=new_n778 A2=new_n780 ZN=G486
+.gate NAND2_X1  A1=new_n428 A2=new_n758 ZN=new_n784
+.gate INV_X1    A=new_n784 ZN=new_n785
+.gate NAND2_X1  A1=new_n259 A2=new_n785 ZN=new_n786
+.gate NAND2_X1  A1=G20 A2=new_n784 ZN=new_n788
+.gate NAND2_X1  A1=new_n786 A2=new_n788 ZN=G487
+.gate AND2_X1   A1=new_n222 A2=new_n752 ZN=new_n792
+.gate AND2_X1   A1=new_n287 A2=new_n332 ZN=new_n794
+.gate AND2_X1   A1=new_n792 A2=new_n794 ZN=new_n796
+.gate NAND2_X1  A1=new_n580 A2=new_n796 ZN=new_n798
+.gate INV_X1    A=new_n798 ZN=new_n799
+.gate NAND2_X1  A1=new_n184 A2=new_n799 ZN=new_n800
+.gate NAND2_X1  A1=G21 A2=new_n798 ZN=new_n802
+.gate NAND2_X1  A1=new_n800 A2=new_n802 ZN=G488
+.gate NAND2_X1  A1=new_n542 A2=new_n796 ZN=new_n806
+.gate INV_X1    A=new_n806 ZN=new_n807
+.gate NAND2_X1  A1=new_n187 A2=new_n807 ZN=new_n808
+.gate NAND2_X1  A1=G22 A2=new_n806 ZN=new_n810
+.gate NAND2_X1  A1=new_n808 A2=new_n810 ZN=G489
+.gate NAND2_X1  A1=new_n504 A2=new_n796 ZN=new_n814
+.gate INV_X1    A=new_n814 ZN=new_n815
+.gate NAND2_X1  A1=new_n192 A2=new_n815 ZN=new_n816
+.gate NAND2_X1  A1=G23 A2=new_n814 ZN=new_n818
+.gate NAND2_X1  A1=new_n816 A2=new_n818 ZN=G490
+.gate NAND2_X1  A1=new_n428 A2=new_n796 ZN=new_n822
+.gate INV_X1    A=new_n822 ZN=new_n823
+.gate NAND2_X1  A1=new_n195 A2=new_n823 ZN=new_n824
+.gate NAND2_X1  A1=G24 A2=new_n822 ZN=new_n826
+.gate NAND2_X1  A1=new_n824 A2=new_n826 ZN=G491
+.gate AND2_X1   A1=new_n286 A2=new_n336 ZN=new_n830
+.gate AND2_X1   A1=new_n754 A2=new_n830 ZN=new_n832
+.gate NAND2_X1  A1=new_n580 A2=new_n832 ZN=new_n834
+.gate INV_X1    A=new_n834 ZN=new_n835
+.gate NAND2_X1  A1=new_n98 A2=new_n835 ZN=new_n836
+.gate NAND2_X1  A1=G25 A2=new_n834 ZN=new_n838
+.gate NAND2_X1  A1=new_n836 A2=new_n838 ZN=G492
+.gate NAND2_X1  A1=new_n542 A2=new_n832 ZN=new_n842
+.gate INV_X1    A=new_n842 ZN=new_n843
+.gate NAND2_X1  A1=new_n101 A2=new_n843 ZN=new_n844
+.gate NAND2_X1  A1=G26 A2=new_n842 ZN=new_n846
+.gate NAND2_X1  A1=new_n844 A2=new_n846 ZN=G493
+.gate NAND2_X1  A1=new_n504 A2=new_n832 ZN=new_n850
+.gate INV_X1    A=new_n850 ZN=new_n851
+.gate NAND2_X1  A1=new_n106 A2=new_n851 ZN=new_n852
+.gate NAND2_X1  A1=G27 A2=new_n850 ZN=new_n854
+.gate NAND2_X1  A1=new_n852 A2=new_n854 ZN=G494
+.gate NAND2_X1  A1=new_n428 A2=new_n832 ZN=new_n858
+.gate INV_X1    A=new_n858 ZN=new_n859
+.gate NAND2_X1  A1=new_n109 A2=new_n859 ZN=new_n860
+.gate NAND2_X1  A1=G28 A2=new_n858 ZN=new_n862
+.gate NAND2_X1  A1=new_n860 A2=new_n862 ZN=G495
+.gate AND2_X1   A1=new_n287 A2=new_n336 ZN=new_n866
+.gate AND2_X1   A1=new_n792 A2=new_n866 ZN=new_n868
+.gate NAND2_X1  A1=new_n580 A2=new_n868 ZN=new_n870
+.gate INV_X1    A=new_n870 ZN=new_n871
+.gate NAND2_X1  A1=new_n120 A2=new_n871 ZN=new_n872
+.gate NAND2_X1  A1=G29 A2=new_n870 ZN=new_n874
+.gate NAND2_X1  A1=new_n872 A2=new_n874 ZN=G496
+.gate NAND2_X1  A1=new_n542 A2=new_n868 ZN=new_n878
+.gate INV_X1    A=new_n878 ZN=new_n879
+.gate NAND2_X1  A1=new_n123 A2=new_n879 ZN=new_n880
+.gate NAND2_X1  A1=G30 A2=new_n878 ZN=new_n882
+.gate NAND2_X1  A1=new_n880 A2=new_n882 ZN=G497
+.gate NAND2_X1  A1=new_n504 A2=new_n868 ZN=new_n886
+.gate INV_X1    A=new_n886 ZN=new_n887
+.gate NAND2_X1  A1=new_n128 A2=new_n887 ZN=new_n888
+.gate NAND2_X1  A1=G31 A2=new_n886 ZN=new_n890
+.gate NAND2_X1  A1=new_n888 A2=new_n890 ZN=G498
+.gate NAND2_X1  A1=new_n428 A2=new_n868 ZN=new_n894
+.gate INV_X1    A=new_n894 ZN=new_n895
+.gate NAND2_X1  A1=new_n131 A2=new_n895 ZN=new_n896
+.gate NAND2_X1  A1=G32 A2=new_n894 ZN=new_n898
+.gate NAND2_X1  A1=new_n896 A2=new_n898 ZN=G499
+.end

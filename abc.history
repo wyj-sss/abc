@@ -1,0 +1,196 @@
+source -s abc.rc
+read_aig C17.aig
+read C17.aig
+read work1/C17.aig
+find /path/to/abc -name "*.lib" -o -name "*.genlib" 2>/dev/null
+read abc/test/c17.aig
+read c17.aig
+read c17_work/C17.aig
+read c17_work/NangateOpenCellLibrary_typical.lib
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+print_stats
+# 查看映射结果
+print_stats
+print_gates
+print_gates
+write_blif c17_mapped.blif
+write_verilog c17_mapped.v
+source -s abc.rc
+read_aiger c17_work/c17.aig
+# 输出Verilog文件（你原有的指令）
+write_verilog c17_one_to_one.v
+# 输出BLIF文件（新增指令）
+write_blif c17_one_to_one.blif
+write_verilog c17_one_to_one.v
+write_blif c17_one_to_one.blif
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+print_stats
+print_gates
+source -s abc.rc
+read C17.aig
+read c17_work/C17.aig
+# 导出带详细信息的 AIG 视图到 c17_aig_detail.dot
+write_dot c17_aig_detail.dot -aig -detail
+read c499_work/c499.aig
+read NangateOpenCellLibrary_typical.lib
+read_lib NangateOpenCellLibrary_typical.lib
+write_verilog c499_one_to_one.v
+help mapoto
+help map_oto
+help -a
+qiut
+grep -n "\"map\"" src/base/abci/abc.c | head -20
+source -s abc.rc
+help map
+help
+help ps
+read c17_work/c17.aig
+map_oto
+read_aiger c17_work/c17.aig
+print_stats
+read_lib NangateOpenCellLibrary_typical.lib
+print_gates
+map_oto -v
+source -s abc.rc
+ read_aiger c17_work/c17.aig
+map -v
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+help map_oto
+help
+mapper_extract
+read_aiger c17_work/c17.aig
+mapper_extract -o /tmp/output.csv -v -s 3
+grep -r "mapper_extract" src --include="*.c" | head -5
+source -s abc.rc
+cat /tmp/output.csv
+grep -r "Abc_NtkLevel\|NtkLevel" src/base/abc --include="*.h" | head -10
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+map_oto -v
+mapper_extract -s 6
+c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger c17_work/c17.aig
+print_gates
+print_stats
+source -s abc.rc
+mapper_extract -v -s 6
+write_verilog c17_oto.v
+write_verilog c17_map.v
+show
+write_dot c17.dot
+dot -Tpng c17.dot -o c17_aig.png
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+read_aiger c17_work/c17.aig
+mapper_extract
+source -s abc.rc
+mapper_extract -v -s 6
+mapper_extract -s 6
+read_blif c499_work/c499_map.blif
+cec c499_work/c499_oto.blif
+read_library c17_work/NangateOpenCellLibrary_typical.lib
+help
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger c17_work/c17.aig
+map_oto
+map_oto -v
+source -s abc.rc
+write_blif
+write_blif c17_oto.blif
+read_aiger ../c499_work/c499.aig
+read_aiger c499_work/c499.aig
+write_blif c499_oto.blif
+map_tot
+read c499_work/c499_map.blif
+cec c499_oto.blif
+write_verilog c499_oto.v
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+map_oto -v
+source -s abc.rc
+write_blif c499_oto.blif&&write_verilog c499_oto.v
+write_blif c499_oto.blif
+read_blif c499_work/c499_map.blif
+read_aiger c17_work/c17.aig
+write_verilog c17_oto.v
+write_blif c17_oto.blif
+read_aiger c499_work/c499.aig
+map_oto
+write_blif c499_work/c499_oto.blif
+cec c499_work/c499_oto.blif
+write_verilog c499_work/c499_oto.v
+mapper_extract -v -s 6
+read_aiger c880_work/c880.aig
+write_blif c880_work/c880_map.blif
+write_verilog c880_work/c880_map.v
+write_verilog c880_work/c880_oto.v
+write_blif c880_work/c880_oto.blif
+read_blif c880_work/c880_oto.blif
+cec c880_work/c880_map.blif
+write_dot c880.dot
+dot -Tpdf c880.dot -o c880.pdf
+source -s abc.rc
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+cec c88-_work/c880_map.blif
+read_blif c499_work/c499_oto.blif
+cec c499_work/c499_map.blif
+read_blif c17_work/c17_oto.blif
+cec c17_work/c17_map.blif
+read_truth -xf IWLS2026/truth_files/ex220.truth
+strash
+write_aiger IWLS2026/aig_files/ex220_from_truth_test.aig
+print_stats
+source -s abc.rc
+phyread c17_work\output.csv
+phyread -h
+phyread c17_work/output.csv
+physort -o -n 5
+physort -c -n 5
+physort -h
+physort -o -n 6
+physort -c -n 6
+phyread c499_work/output.csv
+physort -c -n 20
+physort -c -n 50
+physort -o -n 20
+physort -c -n 100
+physort -o -n 100
+phyread c880_work/output.csv
+physort -c -n 100 -a
+physort -c -n 200
+physort -c -n 500
+read_aiger IWLS2026\aig_files\ex221.aig
+source -s abc.rc
+read_aiger IWLS2026/aig_files/ex221.aig
+&get
+&deepsyn -I 1 -o -v -T 41500
+write_aiger ex221_opt.aig
+read_aiger aig_files\ex221.aig
+read_aiger IWLS2026/aig_opt_files/ex221_opt.aig
+read_aiger IWLS2026/aig_opt_files/ex221_21_17016.aig
+recadd3
+write_aiger ex221_20_19346.aig
+read_aiger ex221_20_19346.aig
+source -s abc.rc
+phyread -L 0.30 -M 0.55 -H 0.85 c880_work/output.csv
+physort -H -n 10
+physort -M -n 10
+physort -L -n 10
+phywrite c880_work/output_aug_multi.csv
+physort -H -n 10
+physort -M -n 10
+physort -L -n 10
+read_aiger c17_work/c17.aig
+map_oto
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+print_gates
+read_aiger c880_work/c880.aig
+write_aiger c17_work/c17_fault.aig
+strash
+source -s abc.rc
+phyread -L 0.30 -M 0.55 -H 0.85 c17_work/output.csv
+phywrite
+phyread -L 0.30 -M 0.55 -H 0.85 c499_work/output.csv
+phyread -L 0.30 -M 0.55 -H 0.85 c880_work/output.csv

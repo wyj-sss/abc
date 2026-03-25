@@ -1,0 +1,75 @@
+source -s abc.rc
+read c499.aig
+read NangateOpenCellLibrary_typical.lib
+read_lib NangateOpenCellLibrary_typical.lib
+read abc/NangateOpenCellLibrary_typical.lib
+read_lib abc/NangateOpenCellLibrary_typical.lib
+read abc\NangateOpenCellLibrary_typical.lib
+read ./NangateOpenCellLibrary_typical.lib
+read_lib ./NangateOpenCellLibrary_typical.lib
+read ../NangateOpenCellLibrary_typical.lib
+read_lib ../NangateOpenCellLibrary_typical.lib
+read c499.aig
+print_stats
+print_gates
+source -s abc.rc
+write_verilog c499_mapped.v
+# 1. 读取 c499.aig（当前目录直接读，无需路径）
+abc 01> read c499.aig
+# 2. 转换为AIG二进制格式（关键！避免导出非AIG结构）
+abc 02> strash
+# 3. 导出DOT文件（通用命令，所有ABC版本都支持）
+abc 03> write_dot c499_aig.dot
+# 4. 退出ABC
+abc 04> quit
+strash
+write_dot c499.aig.dot
+source -s abc.rc
+read c499_work/c499.aig
+read c499.aig
+read ../NangateOpenCellLibrary_typical.lib
+read_lib ../NangateOpenCellLibrary_typical.lib
+print_stats
+print_gates
+read_aiger c499.aig
+read_lib c17_work/NangateOpenCellLibrary_typical.lib
+read_lib ./c17_work/NangateOpenCellLibrary_typical.lib
+read_lib ../c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+write_blif c499_oto.blif
+write_verilog c499_oto.v
+write_verilog c499.v
+write_blif c499.blif
+read c499_oto.blif
+cec c499.v
+cec c499.blif
+read c499.aig
+write_dot c499.dot
+source -s abc.rc
+help map_oto
+read_aiger c499.aig
+read_lib ../c17_work/NangateOpenCellLibrary_typical.lib
+map_oto -h
+print_stats
+map -s
+map_oto -v
+read_lib ../NangateOpenCellLibrary_typical.lib
+print_state
+read_verilog c499_one_to_one.v
+write_blif c499_one_to_one.blif
+read c499_map.blif
+read_lib ../c17_work/NangateOpenCellLibrary_typical.lib
+cec c499_one_to_one.blif
+source -s abc.rc
+print_stats
+read_aiger c499.aig
+read_blif c499_map.blif
+read_blif c499_one_to_one.blif
+mapper_extract -v -s 6
+cec c499_oto.blif
+map_oto
+print_gates
+write_verilog c499.v
+write_blif c499_oto.blif
+read c499_map.blif
+mapper_extract -v -s 6

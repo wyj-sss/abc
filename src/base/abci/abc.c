@@ -63,9 +63,12 @@
 #include "map/mio/mio.h"
 #include "opt/fret/fretime.h"
 #include "opt/nwk/nwkMerge.h"
+#include "opt/physical/phyInfo.h"
 #include "base/acb/acbPar.h"
 #include "misc/extra/extra.h"
 #include "opt/eslim/eSLIM.h"
+// 在 abc.c 的其他 #include 之间添加
+#include "map/mapper/mapper.h"
 
 
 #ifndef _WIN32
@@ -297,6 +300,10 @@ static int Abc_CommandRecDump3               ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandRecMerge3              ( Abc_Frame_t * pAbc, int argc, char ** argv );
 
 static int Abc_CommandMap                    ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandMapOto                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPhyRead                ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPhySort                ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPhyWrite               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAmap                   ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandPhaseMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandStochMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -375,6 +382,8 @@ static int Abc_CommandEco                    ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandBmc                    ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandBmc2                   ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandBmc3                   ( Abc_Frame_t * pAbc, int argc, char ** argv );
+
+static Phy_Data_t * s_pPhyData = NULL;
 static int Abc_CommandBmcInter               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandIndcut                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandEnlarge                ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -1139,6 +1148,11 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "Choicing",     "rec_merge3",    Abc_CommandRecMerge3,        0 );
 
     Cmd_CommandAdd( pAbc, "SC mapping",   "map",           Abc_CommandMap,              1 );
+    Cmd_CommandAdd( pAbc, "SC mapping",   "map_oto",       Abc_CommandMapOto,           1 );
+    Cmd_CommandAdd( pAbc, "Physical",     "phyread",       Abc_CommandPhyRead,          0 );
+    Cmd_CommandAdd( pAbc, "Physical",     "physort",       Abc_CommandPhySort,          0 );
+    Cmd_CommandAdd( pAbc, "Physical",     "phywrite",      Abc_CommandPhyWrite,         0 );
+    Cmd_CommandAdd( pAbc, "Mapping", "mapper_extract",     Mapper_CommandExtract, 0 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "amap",          Abc_CommandAmap,             1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "phase_map",     Abc_CommandPhaseMap,         1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "stochmap",      Abc_CommandStochMap,         1 );
@@ -21031,6 +21045,500 @@ usage:
     Abc_Print( -2, "\t-o       : toggles using buffers to decouple combinational outputs [default = %s]\n", fUseBuffs? "yes": "no" );
     Abc_Print( -2, "\t-v       : toggles verbose output [default = %s]\n", fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-h       : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [One-to-one mapping with K=2 constraint.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     [Abc_CommandMap]
+
+***********************************************************************/
+int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    Abc_Ntk_t * pNtk, * pNtkRes;
+    char Buffer[100];
+    double DelayTarget;
+    double AreaMulti;
+    double DelayMulti;
+    float LogFan = 0;
+    float Slew = 0; // choose based on the library
+    float Gain = 250;
+    int nGatesMin = 0;
+    int fAreaOnly;
+    int fRecovery;
+    int fSweep;
+    int fSwitching;
+    int fSkipFanout;
+    int fUseProfile;
+    int fUseBuffs;
+    int fVerbose;
+    int c;
+    extern Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+    extern Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+    extern int Abc_NtkFraigSweep( Abc_Ntk_t * pNtk, int fUseInv, int fExdc, int fVerbose, int fVeryVerbose );
+
+    pNtk = Abc_FrameReadNtk(pAbc);
+    // set defaults
+    DelayTarget =-1;
+    AreaMulti   = 0;
+    DelayMulti  = 0;
+    fAreaOnly   = 0;
+    fRecovery   = 0;
+    fSweep      = 1;
+    fSwitching  = 0;
+    fSkipFanout = 0;
+    fUseProfile = 0;
+    fUseBuffs   = 0;
+    fVerbose    = 0;
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "DABFSGMarspfuovh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'D':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-D\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            DelayTarget = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( DelayTarget <= 0.0 )
+                goto usage;
+            break;
+        case 'A':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-A\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            AreaMulti = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            break;
+        case 'B':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-B\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            DelayMulti = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            break;
+        case 'F':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-F\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            LogFan = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( LogFan < 0.0 )
+                goto usage;
+            break;
+        case 'S':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-S\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            Slew = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( Slew <= 0.0 )
+                goto usage;
+            break;
+        case 'G':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-G\" should be followed by a floating point number.\n" );
+                goto usage;
+            }
+            Gain = (float)atof(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( Gain <= 0.0 )
+                goto usage;
+            break;
+        case 'M':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-M\" should be followed by a positive integer.\n" );
+                goto usage;
+            }
+            nGatesMin = atoi(argv[globalUtilOptind]);
+            globalUtilOptind++;
+            if ( nGatesMin < 0 )
+                goto usage;
+            break;
+        case 'a':
+            fAreaOnly ^= 1;
+            break;
+        case 'r':
+            fRecovery ^= 1;
+            break;
+        case 's':
+            fSweep ^= 1;
+            break;
+        case 'p':
+            fSwitching ^= 1;
+            break;
+        case 'f':
+            fSkipFanout ^= 1;
+            break;
+        case 'u':
+            fUseProfile ^= 1;
+            break;
+        case 'o':
+            fUseBuffs ^= 1;
+            break;
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( pNtk == NULL )
+    {
+        Abc_Print( -1, "Empty network.\n" );
+        return 1;
+    }
+
+    if ( fAreaOnly )
+        DelayTarget = ABC_INFINITY;
+
+    if ( !Abc_NtkIsStrash(pNtk) )
+    {
+        pNtk = Abc_NtkStrash( pNtk, 0, 0, 0 );
+        if ( pNtk == NULL )
+        {
+            Abc_Print( -1, "Strashing before mapping has failed.\n" );
+            return 1;
+        }
+        Abc_Print( 0, "The network was strashed before one-to-one mapping.\n" );
+        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        if ( pNtkRes == NULL )
+        {
+            Abc_NtkDelete( pNtk );
+            Abc_Print( -1, "Mapping has failed.\n" );
+            return 1;
+        }
+        Abc_NtkDelete( pNtk );
+    }
+      else
+    {
+        // get the new network
+        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        if ( pNtkRes == NULL )
+        {
+            Abc_Print( -1, "Mapping has failed.\n" );
+            return 1;
+        }
+    }
+
+    if ( fSweep )
+    {
+        Abc_NtkFraigSweep( pNtkRes, 0, 0, 0, 0 );
+        if ( Abc_NtkHasMapping(pNtkRes) )
+        {
+            pNtkRes = Abc_NtkDupDfs( pNtk = pNtkRes );
+            Abc_NtkDelete( pNtk );
+        }
+    }
+
+    // replace the current network
+    Abc_FrameReplaceCurrentNetwork( pAbc, pNtkRes );
+    return 0;
+
+usage:
+    if ( DelayTarget == -1 )
+        sprintf(Buffer, "not used" );
+    else
+        sprintf(Buffer, "%.3f", DelayTarget );
+    Abc_Print( -2, "usage: map_oto [-DABFSG float] [-M num] [-arspfuovh]\n" );
+    Abc_Print( -2, "\t           performs one-to-one technology mapping with K=2 constraint\n" );
+    Abc_Print( -2, "\t-D float : sets the global required times [default = %s]\n", Buffer );
+    Abc_Print( -2, "\t-A float : \"area multiplier\" to bias gate selection [default = %.2f]\n", AreaMulti );
+    Abc_Print( -2, "\t-B float : \"delay multiplier\" to bias gate selection [default = %.2f]\n", DelayMulti );
+    Abc_Print( -2, "\t-F float : the logarithmic fanout delay parameter [default = %.2f]\n", LogFan );
+    Abc_Print( -2, "\t-S float : the slew parameter used to generate the library [default = %.2f]\n", Slew );
+    Abc_Print( -2, "\t-G float : the gain parameter used to generate the library [default = %.2f]\n", Gain );
+    Abc_Print( -2, "\t-M num   : skip gate classes whose size is less than this [default = %d]\n", nGatesMin );
+    Abc_Print( -2, "\t-a       : toggles area-only mapping [default = %s]\n", fAreaOnly? "yes": "no" );
+    Abc_Print( -2, "\t-r       : toggles area recovery [default = %s]\n", fRecovery? "yes": "no" );
+    Abc_Print( -2, "\t-s       : toggles sweep after mapping [default = %s]\n", fSweep? "yes": "no" );
+    Abc_Print( -2, "\t-p       : optimizes power by minimizing switching [default = %s]\n", fSwitching? "yes": "no" );
+    Abc_Print( -2, "\t-f       : do not use large gates to map high-fanout nodes [default = %s]\n", fSkipFanout? "yes": "no" );
+    Abc_Print( -2, "\t-u       : use standard-cell profile [default = %s]\n", fUseProfile? "yes": "no" );
+    Abc_Print( -2, "\t-o       : toggles using buffers to decouple combinational outputs [default = %s]\n", fUseBuffs? "yes": "no" );
+    Abc_Print( -2, "\t-v       : toggles verbose output [default = %s]\n", fVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-h       : print the command usage\n");
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Reads extracted physical information from CSV file.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    char * pFileName;
+    int fVerbose = 1;
+    float AlphaLow = 0.20f;
+    float AlphaMiddle = 0.50f;
+    float AlphaHigh = 0.80f;
+    int c;
+    (void)pAbc;
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vLMHh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'L':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-L\" should be followed by a floating point number in [0,1].\n" );
+                goto usage;
+            }
+            AlphaLow = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( AlphaLow < 0.0f || AlphaLow > 1.0f )
+                goto usage;
+            break;
+        case 'M':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-M\" should be followed by a floating point number in [0,1].\n" );
+                goto usage;
+            }
+            AlphaMiddle = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( AlphaMiddle < 0.0f || AlphaMiddle > 1.0f )
+                goto usage;
+            break;
+        case 'H':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-H\" should be followed by a floating point number in [0,1].\n" );
+                goto usage;
+            }
+            AlphaHigh = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( AlphaHigh < 0.0f || AlphaHigh > 1.0f )
+                goto usage;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( globalUtilOptind >= argc )
+    {
+        Abc_Print( -1, "phyread: CSV file path is required.\n" );
+        goto usage;
+    }
+    pFileName = argv[globalUtilOptind];
+
+    if ( s_pPhyData )
+    {
+        Phy_DataFree( s_pPhyData );
+        s_pPhyData = NULL;
+    }
+
+    s_pPhyData = Phy_DataReadCsv( pFileName, AlphaLow, AlphaMiddle, AlphaHigh, fVerbose );
+    if ( s_pPhyData == NULL )
+        return 1;
+
+    Phy_DataPrintStats( s_pPhyData );
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: phyread [-L float] [-M float] [-H float] [-vh] <file.csv>\n" );
+    Abc_Print( -2, "\t         reads extracted physical CSV information into memory\n" );
+    Abc_Print( -2, "\t-L float: alpha for low-criticality potential   [default = %.2f]\n", AlphaLow );
+    Abc_Print( -2, "\t-M float: alpha for middle-criticality potential[default = %.2f]\n", AlphaMiddle );
+    Abc_Print( -2, "\t-H float: alpha for high-criticality potential  [default = %.2f]\n", AlphaHigh );
+    Abc_Print( -2, "\t-v     : toggle verbose readout [default = yes]\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n" );
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Sorts loaded physical records and prints top entries.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandPhySort( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    int SortMode = 0; // 0=middle(default), 1=criticality, 2=low, 3=high
+    int fDescending = 1;
+    int nTop = 10;
+    int c;
+    (void)pAbc;
+
+    if ( s_pPhyData == NULL )
+    {
+        Abc_Print( -1, "physort: no physical data loaded. Run 'phyread <file.csv>' first.\n" );
+        return 1;
+    }
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "coLMHan" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'c':
+            SortMode = 1;
+            break;
+        case 'o':
+            SortMode = 0;
+            break;
+        case 'L':
+            SortMode = 2;
+            break;
+        case 'M':
+            SortMode = 0;
+            break;
+        case 'H':
+            SortMode = 3;
+            break;
+        case 'a':
+            fDescending = 0;
+            break;
+        case 'n':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-n\" should be followed by a positive integer.\n" );
+                goto usage;
+            }
+            nTop = atoi( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( nTop < 0 )
+                goto usage;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( SortMode == 1 )
+    {
+        Phy_DataSortByCriticality( s_pPhyData, fDescending );
+        Abc_Print( 1, "Sorted by criticality (%s).\n", fDescending ? "descending" : "ascending" );
+    }
+    else if ( SortMode == 2 )
+    {
+        Phy_DataSortByOptPotentialLow( s_pPhyData, fDescending );
+        Abc_Print( 1, "Sorted by opt_potential_low (%s).\n", fDescending ? "descending" : "ascending" );
+    }
+    else if ( SortMode == 3 )
+    {
+        Phy_DataSortByOptPotentialHigh( s_pPhyData, fDescending );
+        Abc_Print( 1, "Sorted by opt_potential_high (%s).\n", fDescending ? "descending" : "ascending" );
+    }
+    else
+    {
+        Phy_DataSortByOptPotentialMiddle( s_pPhyData, fDescending );
+        Abc_Print( 1, "Sorted by opt_potential_middle (%s).\n", fDescending ? "descending" : "ascending" );
+    }
+    Phy_DataPrintTop( s_pPhyData, nTop );
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: physort [-coLMan <num>] [-h]\n" );
+    Abc_Print( -2, "\t         sorts loaded physical records and prints top entries\n" );
+    Abc_Print( -2, "\t-c     : sort by criticality\n" );
+    Abc_Print( -2, "\t-o/-M  : sort by opt_potential_middle [default]\n" );
+    Abc_Print( -2, "\t-L     : sort by opt_potential_low\n" );
+    Abc_Print( -2, "\t-H     : sort by opt_potential_high\n" );
+    Abc_Print( -2, "\t-a     : sort ascending [default is descending]\n" );
+    Abc_Print( -2, "\t-n num : number of entries to print [default = %d]\n", nTop );
+    Abc_Print( -2, "\t-h     : print the command usage\n" );
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Writes loaded physical data with rebuilt potential columns.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandPhyWrite( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    char * pFileName;
+    int fVerbose = 1;
+    int c;
+    (void)pAbc;
+
+    if ( s_pPhyData == NULL )
+    {
+        Abc_Print( -1, "phywrite: no physical data loaded. Run 'phyread <file.csv>' first.\n" );
+        return 1;
+    }
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( globalUtilOptind < argc )
+        pFileName = argv[globalUtilOptind];
+    else
+        pFileName = s_pPhyData->FileName;
+
+    if ( !Phy_DataWriteCsv( s_pPhyData, pFileName, fVerbose ) )
+        return 1;
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: phywrite [-vh] [file.csv]\n" );
+    Abc_Print( -2, "\t         writes loaded physical records with rebuilt potential columns\n" );
+    Abc_Print( -2, "\t         if file is omitted, overwrites the source CSV loaded by phyread\n" );
+    Abc_Print( -2, "\t-v     : toggle verbose writeout [default = yes]\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n" );
     return 1;
 }
 

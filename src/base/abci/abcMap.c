@@ -99,6 +99,11 @@ Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTa
         printf( "The current library is not available.\n" );
         return 0;
     }
+    if ( Mio_LibraryReadGateNum( pLib ) == 0 )
+    {
+        printf( "The current library contains no gates.\n" );
+        return 0;
+    }
     if ( AreaMulti != 0.0 )
         fUseMulti = 1, printf( "The cell areas are multiplied by the factor: <num_fanins> ^ (%.2f).\n", AreaMulti );
     if ( DelayMulti != 0.0 )
@@ -320,7 +325,7 @@ Map_Man_t * Abc_NtkToMap( Abc_Ntk_t * pNtk, double DelayTarget, int fRecovery, f
         }
         assert( Abc_ObjIsNode(pNode) );
         // add the node to the mapper
-        pNodeMap = Map_NodeAnd( pMan, 
+        pNodeMap = Map_NodeAnd( pMan,
             Map_NotCond( Abc_ObjFanin0(pNode)->pCopy, (int)Abc_ObjFaninC0(pNode) ),
             Map_NotCond( Abc_ObjFanin1(pNode)->pCopy, (int)Abc_ObjFaninC1(pNode) ) );
         assert( pNode->pCopy == NULL );
@@ -348,6 +353,383 @@ Map_Man_t * Abc_NtkToMap( Abc_Ntk_t * pNtk, double DelayTarget, int fRecovery, f
         Map_ManReadOutputs(pMan)[i] = Map_NotCond( (Map_Node_t *)Abc_ObjFanin0(pNode)->pCopy, (int)Abc_ObjFaninC0(pNode) );
     }
     return pMan;
+}
+
+typedef struct Abc_OtoMapCtx_t_
+{
+    Abc_Ntk_t *   pNtkNew;
+    Mio_Library_t * pLib;
+    Vec_Ptr_t *   vPos;
+    Vec_Ptr_t *   vNeg;
+    Mio_Gate_t *  pGateInv;
+    Mio_Gate_t *  pGateAnd;
+    Mio_Gate_t *  pGateNand;
+    int           AndPol;
+    int           NandPol;
+    Abc_Obj_t *   pConst1;
+    Abc_Obj_t *   pConst0;
+} Abc_OtoMapCtx_t;
+
+static int Abc_OtoTruthPolAnd( word t )
+{
+    unsigned u = (unsigned)(t & 0xF);
+    switch ( u )
+    {
+    case 0x1: return 0;
+    case 0x2: return 1;
+    case 0x4: return 2;
+    case 0x8: return 3;
+    default:  return -1;
+    }
+}
+
+static int Abc_OtoTruthPolNand( word t )
+{
+    unsigned u = (unsigned)(t & 0xF);
+    switch ( u )
+    {
+    case 0xE: return 0;
+    case 0xD: return 1;
+    case 0xB: return 2;
+    case 0x7: return 3;
+    default:  return -1;
+    }
+}
+
+static int Abc_OtoSelectGates( Mio_Library_t * pLib, Mio_Gate_t ** ppInv, Mio_Gate_t ** ppAnd, int * pAndPol, Mio_Gate_t ** ppNand, int * pNandPol )
+{
+    Mio_Gate_t * pGate;
+    Mio_Gate_t * pInv = NULL, * pAnd = NULL, * pNand = NULL;
+    double AreaInv = ABC_INFINITY, AreaAndPref = ABC_INFINITY, AreaAndAny = ABC_INFINITY;
+    double AreaNandPref = ABC_INFINITY, AreaNandAny = ABC_INFINITY;
+    int AndPol = -1, NandPol = -1, Pol;
+
+    Mio_LibraryForEachGate( pLib, pGate )
+    {
+        if ( Mio_GateReadPinNum(pGate) == 1 && Mio_GateIsInv(pGate) )
+        {
+            if ( Mio_GateReadArea(pGate) < AreaInv )
+                AreaInv = Mio_GateReadArea(pGate), pInv = pGate;
+            continue;
+        }
+        if ( Mio_GateReadPinNum(pGate) != 2 )
+            continue;
+
+        Pol = Abc_OtoTruthPolAnd( Mio_GateReadTruth(pGate) );
+        if ( Pol >= 0 )
+        {
+            if ( Pol == 3 && Mio_GateReadArea(pGate) < AreaAndPref )
+                AreaAndPref = Mio_GateReadArea(pGate), pAnd = pGate, AndPol = Pol;
+            else if ( pAnd == NULL && Mio_GateReadArea(pGate) < AreaAndAny )
+                AreaAndAny = Mio_GateReadArea(pGate), pAnd = pGate, AndPol = Pol;
+            continue;
+        }
+
+        Pol = Abc_OtoTruthPolNand( Mio_GateReadTruth(pGate) );
+        if ( Pol >= 0 )
+        {
+            if ( Pol == 3 && Mio_GateReadArea(pGate) < AreaNandPref )
+                AreaNandPref = Mio_GateReadArea(pGate), pNand = pGate, NandPol = Pol;
+            else if ( pNand == NULL && Mio_GateReadArea(pGate) < AreaNandAny )
+                AreaNandAny = Mio_GateReadArea(pGate), pNand = pGate, NandPol = Pol;
+        }
+    }
+
+    *ppInv = pInv;
+    *ppAnd = pAnd;
+    *ppNand = pNand;
+    *pAndPol = AndPol;
+    *pNandPol = NandPol;
+    return pInv != NULL && (pAnd != NULL || pNand != NULL);
+}
+
+static Abc_Obj_t * Abc_OtoCreateInv( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj )
+{
+    Abc_Obj_t * pInv = Abc_NtkCreateNode( p->pNtkNew );
+    Abc_ObjAddFanin( pInv, pObj );
+    pInv->pData = p->pGateInv;
+    return pInv;
+}
+
+static Abc_Obj_t * Abc_OtoConst1( Abc_OtoMapCtx_t * p )
+{
+    if ( p->pConst1 == NULL )
+    {
+        p->pConst1 = Abc_NtkCreateNode( p->pNtkNew );
+        p->pConst1->pData = Mio_LibraryReadConst1( p->pLib );
+    }
+    return p->pConst1;
+}
+
+static Abc_Obj_t * Abc_OtoConst0( Abc_OtoMapCtx_t * p )
+{
+    if ( p->pConst0 == NULL )
+    {
+        p->pConst0 = Abc_NtkCreateNode( p->pNtkNew );
+        p->pConst0->pData = Mio_LibraryReadConst0( p->pLib );
+        if ( p->pConst0->pData == NULL )
+            p->pConst0 = Abc_OtoCreateInv( p, Abc_OtoConst1(p) );
+    }
+    return p->pConst0;
+}
+
+static Abc_Obj_t * Abc_OtoGetMappedLit( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, int fCompl )
+{
+    Abc_Obj_t * pRes;
+    if ( Abc_AigNodeIsConst(pObj) )
+        return fCompl ? Abc_OtoConst0(p) : Abc_OtoConst1(p);
+
+    if ( !fCompl )
+    {
+        pRes = (Abc_Obj_t *)Vec_PtrEntry( p->vPos, pObj->Id );
+        if ( pRes == NULL )
+        {
+            Abc_Obj_t * pNeg = (Abc_Obj_t *)Vec_PtrEntry( p->vNeg, pObj->Id );
+            assert( pNeg != NULL );
+            pRes = Abc_OtoCreateInv( p, pNeg );
+            Vec_PtrWriteEntry( p->vPos, pObj->Id, pRes );
+        }
+        return pRes;
+    }
+
+    pRes = (Abc_Obj_t *)Vec_PtrEntry( p->vNeg, pObj->Id );
+    if ( pRes == NULL )
+    {
+        Abc_Obj_t * pPos = (Abc_Obj_t *)Vec_PtrEntry( p->vPos, pObj->Id );
+        assert( pPos != NULL );
+        pRes = Abc_OtoCreateInv( p, pPos );
+        Vec_PtrWriteEntry( p->vNeg, pObj->Id, pRes );
+    }
+    return pRes;
+}
+
+static Abc_Obj_t * Abc_OtoAdjustInputPol( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, int fNeedOne )
+{
+    return fNeedOne ? pObj : Abc_OtoCreateInv( p, pObj );
+}
+
+static Abc_Obj_t * Abc_OtoCreateAndGate( Abc_OtoMapCtx_t * p, Abc_Obj_t * pIn0, Abc_Obj_t * pIn1 )
+{
+    Abc_Obj_t * pA0, * pA1, * pNode;
+    assert( p->pGateAnd != NULL );
+
+    pA0 = Abc_OtoAdjustInputPol( p, pIn0, (p->AndPol & 1) != 0 );
+    pA1 = Abc_OtoAdjustInputPol( p, pIn1, (p->AndPol & 2) != 0 );
+    pNode = Abc_NtkCreateNode( p->pNtkNew );
+    Abc_ObjAddFanin( pNode, pA0 );
+    Abc_ObjAddFanin( pNode, pA1 );
+    pNode->pData = p->pGateAnd;
+    return pNode;
+}
+
+static Abc_Obj_t * Abc_OtoCreateNandGate( Abc_OtoMapCtx_t * p, Abc_Obj_t * pIn0, Abc_Obj_t * pIn1 )
+{
+    Abc_Obj_t * pA0, * pA1, * pNand;
+    assert( p->pGateNand != NULL );
+
+    pA0 = Abc_OtoAdjustInputPol( p, pIn0, (p->NandPol & 1) != 0 );
+    pA1 = Abc_OtoAdjustInputPol( p, pIn1, (p->NandPol & 2) != 0 );
+    pNand = Abc_NtkCreateNode( p->pNtkNew );
+    Abc_ObjAddFanin( pNand, pA0 );
+    Abc_ObjAddFanin( pNand, pA1 );
+    pNand->pData = p->pGateNand;
+    return pNand;
+}
+
+static void Abc_OtoMarkNeed( Vec_Int_t * vNeedPos, Vec_Int_t * vNeedNeg, Abc_Obj_t * pObj, int fCompl )
+{
+    if ( Abc_AigNodeIsConst(pObj) )
+        return;
+    if ( fCompl )
+        Vec_IntWriteEntry( vNeedNeg, pObj->Id, 1 );
+    else
+        Vec_IntWriteEntry( vNeedPos, pObj->Id, 1 );
+}
+
+static void Abc_OtoAnalyzeRequiredPhases( Abc_Ntk_t * pNtk, Vec_Int_t * vNeedPos, Vec_Int_t * vNeedNeg )
+{
+    Abc_Obj_t * pObj;
+    int i;
+
+    Abc_NtkForEachNode( pNtk, pObj, i )
+    {
+        Abc_OtoMarkNeed( vNeedPos, vNeedNeg, Abc_ObjFanin0(pObj), (int)Abc_ObjFaninC0(pObj) );
+        Abc_OtoMarkNeed( vNeedPos, vNeedNeg, Abc_ObjFanin1(pObj), (int)Abc_ObjFaninC1(pObj) );
+    }
+    Abc_NtkForEachCo( pNtk, pObj, i )
+        Abc_OtoMarkNeed( vNeedPos, vNeedNeg, Abc_ObjFanin0(pObj), (int)Abc_ObjFaninC0(pObj) );
+}
+/**Function*************************************************************
+
+  Synopsis    [Interface with the mapping package - One-To-One K=2 mapping.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     [Abc_NtkMap]
+
+***********************************************************************/
+Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose )
+{
+    Abc_Ntk_t * pNtkNew;
+    Abc_OtoMapCtx_t Ctx;
+    Vec_Ptr_t * vNodes;
+    Vec_Int_t * vNeedPos;
+    Vec_Int_t * vNeedNeg;
+    Abc_Obj_t * pObj;
+    int i;
+    abctime clkTotal = Abc_Clock();
+    Mio_Library_t * pLib = (Mio_Library_t *)Abc_FrameReadLibGen();
+    Mio_Library_t * pLibNtk;
+
+    (void)DelayTarget;
+    (void)AreaMulti;
+    (void)DelayMulti;
+    (void)LogFan;
+    (void)fRecovery;
+    (void)fSwitching;
+    (void)fSkipFanout;
+    (void)fUseProfile;
+    (void)fUseBuffs;
+
+    assert( Abc_NtkIsStrash(pNtk) );
+
+    // Derive temporary genlib from SCL if needed.
+    if ( Abc_FrameReadLibScl() && Abc_SclHasDelayInfo( Abc_FrameReadLibScl() ) )
+    {
+        if ( pLib && Mio_LibraryHasProfile(pLib) )
+            pLib = Abc_SclDeriveGenlib( Abc_FrameReadLibScl(), pLib, Slew, Gain, nGatesMin, fVerbose );
+        else
+            pLib = Abc_SclDeriveGenlib( Abc_FrameReadLibScl(), NULL, Slew, Gain, nGatesMin, fVerbose );
+        if ( Abc_FrameReadLibGen() )
+        {
+            Mio_LibraryTransferDelays( (Mio_Library_t *)Abc_FrameReadLibGen(), pLib );
+            Mio_LibraryTransferProfile( pLib, (Mio_Library_t *)Abc_FrameReadLibGen() );
+        }
+    }
+
+    if ( userLib != NULL )
+        pLib = userLib;
+
+    pLibNtk = (Mio_Library_t *)Abc_FrameReadLibGen();
+    if ( pLibNtk == NULL )
+        pLibNtk = pLib;
+
+    if ( pLibNtk == NULL )
+    {
+        printf( "The current library is not available.\n" );
+        return NULL;
+    }
+    if ( Mio_LibraryReadGateNum(pLibNtk) == 0 )
+    {
+        printf( "The current library contains no gates.\n" );
+        return NULL;
+    }
+
+    memset( &Ctx, 0, sizeof(Ctx) );
+    if ( !Abc_OtoSelectGates( pLibNtk, &Ctx.pGateInv, &Ctx.pGateAnd, &Ctx.AndPol, &Ctx.pGateNand, &Ctx.NandPol ) )
+    {
+        printf( "map_oto: failed to find required gates in library (need INV and AND/NAND).\n" );
+        return NULL;
+    }
+
+    pNtkNew = Abc_NtkStartFrom( pNtk, ABC_NTK_LOGIC, ABC_FUNC_MAP );
+    pNtkNew->pManFunc = pLibNtk;
+
+    Ctx.pNtkNew = pNtkNew;
+    Ctx.pLib = pLibNtk;
+    Ctx.vPos = Vec_PtrStart( Abc_NtkObjNumMax(pNtk) );
+    Ctx.vNeg = Vec_PtrStart( Abc_NtkObjNumMax(pNtk) );
+    vNeedPos = Vec_IntStart( Abc_NtkObjNumMax(pNtk) );
+    vNeedNeg = Vec_IntStart( Abc_NtkObjNumMax(pNtk) );
+
+    Abc_OtoAnalyzeRequiredPhases( pNtk, vNeedPos, vNeedNeg );
+
+    Abc_NtkForEachCi( pNtk, pObj, i )
+        Vec_PtrWriteEntry( Ctx.vPos, pObj->Id, pObj->pCopy );
+
+    vNodes = Abc_NtkDfs( pNtk, 0 );
+    Vec_PtrForEachEntry( Abc_Obj_t *, vNodes, pObj, i )
+    {
+        Abc_Obj_t * pIn0, * pIn1, * pPos = NULL, * pNeg = NULL;
+        int fNeedPos, fNeedNeg;
+        assert( Abc_ObjIsNode(pObj) );
+
+        pIn0 = Abc_OtoGetMappedLit( &Ctx, Abc_ObjFanin0(pObj), (int)Abc_ObjFaninC0(pObj) );
+        pIn1 = Abc_OtoGetMappedLit( &Ctx, Abc_ObjFanin1(pObj), (int)Abc_ObjFaninC1(pObj) );
+        fNeedPos = Vec_IntEntry( vNeedPos, pObj->Id );
+        fNeedNeg = Vec_IntEntry( vNeedNeg, pObj->Id );
+
+        if ( !fNeedPos && !fNeedNeg )
+            fNeedPos = 1;
+
+        if ( fNeedPos && !fNeedNeg )
+        {
+            if ( Ctx.pGateAnd )
+                pPos = Abc_OtoCreateAndGate( &Ctx, pIn0, pIn1 );
+            else
+            {
+                pNeg = Abc_OtoCreateNandGate( &Ctx, pIn0, pIn1 );
+                pPos = Abc_OtoCreateInv( &Ctx, pNeg );
+            }
+        }
+        else if ( !fNeedPos && fNeedNeg )
+        {
+            if ( Ctx.pGateNand )
+                pNeg = Abc_OtoCreateNandGate( &Ctx, pIn0, pIn1 );
+            else
+            {
+                pPos = Abc_OtoCreateAndGate( &Ctx, pIn0, pIn1 );
+                pNeg = Abc_OtoCreateInv( &Ctx, pPos );
+            }
+        }
+        else
+        {
+            if ( Ctx.pGateNand )
+            {
+                pNeg = Abc_OtoCreateNandGate( &Ctx, pIn0, pIn1 );
+                pPos = Abc_OtoCreateInv( &Ctx, pNeg );
+            }
+            else
+            {
+                pPos = Abc_OtoCreateAndGate( &Ctx, pIn0, pIn1 );
+                pNeg = Abc_OtoCreateInv( &Ctx, pPos );
+            }
+        }
+
+        if ( pPos )
+            Vec_PtrWriteEntry( Ctx.vPos, pObj->Id, pPos );
+        if ( pNeg )
+            Vec_PtrWriteEntry( Ctx.vNeg, pObj->Id, pNeg );
+
+    }
+    Vec_PtrFree( vNodes );
+
+    Abc_NtkForEachCo( pNtk, pObj, i )
+    {
+        Abc_Obj_t * pFanin = Abc_OtoGetMappedLit( &Ctx, Abc_ObjFanin0(pObj), (int)Abc_ObjFaninC0(pObj) );
+        Abc_ObjAddFanin( pObj->pCopy, pFanin );
+    }
+
+    Vec_PtrFree( Ctx.vPos );
+    Vec_PtrFree( Ctx.vNeg );
+    Vec_IntFree( vNeedPos );
+    Vec_IntFree( vNeedNeg );
+
+    if ( pNtk->pExdc )
+        pNtkNew->pExdc = Abc_NtkDup( pNtk->pExdc );
+
+    if ( fVerbose )
+        ABC_PRT( "Total runtime", Abc_Clock() - clkTotal );
+
+    if ( !Abc_NtkCheck( pNtkNew ) )
+    {
+        printf( "Abc_NtkMapOto: The network check has failed.\n" );
+        Abc_NtkDelete( pNtkNew );
+        return NULL;
+    }
+    return pNtkNew;
 }
 
 /**Function*************************************************************

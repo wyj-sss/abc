@@ -30,6 +30,8 @@ ABC_NAMESPACE_IMPL_START
 // the largest number of cuts used
 #define  MAP_CUTS_MAX_USE       250
 
+#define  MAP_CUTS_MAX_COMPUTE_OTO   10
+#define  MAP_CUTS_MAX_USE_OTO       10
 // temporary hash table to store the cuts
 typedef struct Map_CutTableStrutct_t Map_CutTable_t;
 struct Map_CutTableStrutct_t
@@ -69,6 +71,7 @@ static int              Map_CutList2Array( Map_Cut_t ** pArray, Map_Cut_t * pLis
 static Map_Cut_t *      Map_CutArray2List( Map_Cut_t ** pArray, int nCuts );
 
 static unsigned         Map_CutComputeTruth( Map_Man_t * p, Map_Cut_t * pCut, Map_Cut_t * pTemp0, Map_Cut_t * pTemp1, int fComp0, int fComp1 );
+extern int             Map_Mapping_OTO( Map_Man_t * p );
 
 // iterator through all the cuts of the list
 #define Map_ListForEachCut( pList, pCut )                 \

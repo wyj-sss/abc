@@ -1,0 +1,12 @@
+GATE zero    0   O=CONST0;
+GATE one     0   O=CONST1;
+GATE inv     1   O=!a;             PIN * INV     1 999 1.0 0.0 1.0 0.0
+GATE and00   1   O=a*b;            PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE and01   1   O=a*!b;           PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE and10   1   O=!a*b;           PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE and11   1   O=!a*!b;          PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE nand00  1   O=!(a*b);         PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE nand01  1   O=!(a*!b);        PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE nand10  1   O=!(!a*b);        PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE nand11  1   O=!(!a*!b);       PIN * NONINV  1 999 1.0 0.0 1.0 0.0
+GATE buf     1   O=a;              PIN * NONINV  1 999 1.0 0.0 1.0 0.0
