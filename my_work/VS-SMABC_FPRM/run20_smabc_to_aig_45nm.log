@@ -1,0 +1,278 @@
+[step1] run SMABC method reproduction and export optimized verilog
+[build] g++ -O3 -std=c++17 -o reproduce_paper_full reproduce_paper_full.cpp
+[run] RUNS=20 NP=100 GENERATIONS=50 VERIFY_METHOD=0 BENCH_FILTER=<all>
+[export] verilog dir: /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/SMABC_FPRM_Reproduce/smabc_opt_paper (algo=SMABC)
+[bench] br1 n=12 on_set=2
+  run  1 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  2 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  3 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  4 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  5 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  6 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  7 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  8 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  9 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 10 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 11 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 12 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 13 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 14 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 15 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 16 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 17 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 18 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 19 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 20 | PSO=10 GA=10 ABC=10 SMABC=10
+[bench] br2 n=12 on_set=2
+  run  1 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  2 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  3 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  4 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  5 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  6 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  7 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  8 | PSO=10 GA=10 ABC=10 SMABC=10
+  run  9 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 10 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 11 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 12 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 13 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 14 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 15 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 16 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 17 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 18 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 19 | PSO=10 GA=10 ABC=10 SMABC=10
+  run 20 | PSO=10 GA=10 ABC=10 SMABC=10
+[bench] ex1010 n=10 on_set=8
+  run  1 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  2 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  3 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  4 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  5 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  6 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  7 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  8 | PSO=6 GA=6 ABC=6 SMABC=6
+  run  9 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 10 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 11 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 12 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 13 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 14 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 15 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 16 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 17 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 18 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 19 | PSO=6 GA=6 ABC=6 SMABC=6
+  run 20 | PSO=6 GA=6 ABC=6 SMABC=6
+[bench] gary n=15 on_set=2
+  run  1 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  2 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  3 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  4 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  5 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  6 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  7 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  8 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  9 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 10 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 11 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 12 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 13 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 14 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 15 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 16 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 17 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 18 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 19 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 20 | PSO=13 GA=13 ABC=13 SMABC=13
+[bench] in0 n=15 on_set=4
+  run  1 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  2 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  3 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  4 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  5 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  6 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  7 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  8 | PSO=12 GA=12 ABC=12 SMABC=12
+  run  9 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 10 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 11 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 12 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 13 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 14 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 15 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 16 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 17 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 18 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 19 | PSO=12 GA=12 ABC=12 SMABC=12
+  run 20 | PSO=12 GA=12 ABC=12 SMABC=12
+[bench] in2 n=19 on_set=3
+  run  1 | PSO=53 GA=35 ABC=35 SMABC=35
+  run  2 | PSO=35 GA=35 ABC=35 SMABC=35
+  run  3 | PSO=53 GA=35 ABC=35 SMABC=35
+  run  4 | PSO=54 GA=35 ABC=35 SMABC=35
+  run  5 | PSO=35 GA=35 ABC=35 SMABC=35
+  run  6 | PSO=35 GA=35 ABC=35 SMABC=35
+  run  7 | PSO=35 GA=35 ABC=35 SMABC=35
+  run  8 | PSO=35 GA=35 ABC=35 SMABC=35
+  run  9 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 10 | PSO=69 GA=35 ABC=35 SMABC=35
+  run 11 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 12 | PSO=69 GA=35 ABC=35 SMABC=35
+  run 13 | PSO=69 GA=35 ABC=35 SMABC=35
+  run 14 | PSO=69 GA=35 ABC=35 SMABC=35
+  run 15 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 16 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 17 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 18 | PSO=35 GA=35 ABC=35 SMABC=35
+  run 19 | PSO=53 GA=35 ABC=35 SMABC=35
+  run 20 | PSO=35 GA=35 ABC=35 SMABC=35
+[bench] misex3 n=14 on_set=1
+  run  1 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  2 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  3 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  4 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  5 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  6 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  7 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  8 | PSO=13 GA=13 ABC=13 SMABC=13
+  run  9 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 10 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 11 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 12 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 13 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 14 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 15 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 16 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 17 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 18 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 19 | PSO=13 GA=13 ABC=13 SMABC=13
+  run 20 | PSO=13 GA=13 ABC=13 SMABC=13
+[bench] rd84 n=8 on_set=8
+  run  1 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  2 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  3 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  4 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  5 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  6 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  7 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  8 | PSO=14 GA=14 ABC=14 SMABC=14
+  run  9 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 10 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 11 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 12 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 13 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 14 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 15 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 16 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 17 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 18 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 19 | PSO=14 GA=14 ABC=14 SMABC=14
+  run 20 | PSO=14 GA=14 ABC=14 SMABC=14
+[bench] t2 n=17 on_set=2
+  run  1 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  2 | PSO=30 GA=15 ABC=15 SMABC=15
+  run  3 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  4 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  5 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  6 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  7 | PSO=30 GA=15 ABC=15 SMABC=15
+  run  8 | PSO=15 GA=15 ABC=15 SMABC=15
+  run  9 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 10 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 11 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 12 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 13 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 14 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 15 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 16 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 17 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 18 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 19 | PSO=15 GA=15 ABC=15 SMABC=15
+  run 20 | PSO=15 GA=15 ABC=15 SMABC=15
+[bench] table3 n=14 on_set=3
+  run  1 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  2 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  3 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  4 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  5 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  6 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  7 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  8 | PSO=25 GA=25 ABC=25 SMABC=25
+  run  9 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 10 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 11 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 12 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 13 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 14 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 15 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 16 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 17 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 18 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 19 | PSO=25 GA=25 ABC=25 SMABC=25
+  run 20 | PSO=25 GA=25 ABC=25 SMABC=25
+[bench] table5 n=17 on_set=2
+  run  1 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  2 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  3 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  4 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  5 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  6 | PSO=46 GA=31 ABC=31 SMABC=31
+  run  7 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  8 | PSO=31 GA=31 ABC=31 SMABC=31
+  run  9 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 10 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 11 | PSO=46 GA=31 ABC=31 SMABC=31
+  run 12 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 13 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 14 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 15 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 16 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 17 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 18 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 19 | PSO=31 GA=31 ABC=31 SMABC=31
+  run 20 | PSO=61 GA=31 ABC=31 SMABC=31
+[bench] ts10 n=22 on_set=3
+  run  1 | PSO=122 GA=41 ABC=41 SMABC=41
+  run  2 | PSO=159 GA=41 ABC=41 SMABC=41
+  run  3 | PSO=41 GA=41 ABC=41 SMABC=41
+  run  4 | PSO=122 GA=41 ABC=41 SMABC=41
+  run  5 | PSO=81 GA=41 ABC=41 SMABC=41
+  run  6 | PSO=122 GA=41 ABC=41 SMABC=41
+  run  7 | PSO=81 GA=41 ABC=41 SMABC=41
+  run  8 | PSO=63 GA=41 ABC=41 SMABC=41
+  run  9 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 10 | PSO=63 GA=41 ABC=41 SMABC=41
+  run 11 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 12 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 13 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 14 | PSO=63 GA=41 ABC=41 SMABC=41
+  run 15 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 16 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 17 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 18 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 19 | PSO=81 GA=41 ABC=41 SMABC=41
+  run 20 | PSO=122 GA=41 ABC=41 SMABC=41
+
+[done] outputs in: /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/SMABC_FPRM_Reproduce/paper_reproduce_out
+  - table2_reproduce.csv
+  - raw_runs.csv
+  - convergence_avg10.csv
+  - summary.txt
+[ok] finished. see ./paper_reproduce_out/
+[step2] convert optimized verilog -> AIG and run cec
+  [done] br1
+  [done] br2
+  [done] ex1010
+  [done] gary
+  [done] in0
+  [done] in2
+  [done] misex3
+  [done] rd84
+  [done] t2
+  [done] table3
+  [done] table5
+  [done] ts10
+[ok] optimized AIG generated: /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt
+[ok] equivalence report: /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_method_equiv_report.csv

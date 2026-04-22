@@ -1,0 +1,187 @@
+======== ABC command line "source /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.abc"
+Library "asap7sc7p5t_AO_RVT_FF_nldm_211120" from "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/asap7_orfs_combined_RVT_FF_nldm.lib" has 169 cells (0 skipped: 0 seq; 0 tri-state; 0 no func; 0 dont_use; 0 with 2 outputs; 0 with 3+ outputs).  Time =     0.87 sec
+Warning: Detected 2 multi-output cells (for example, "FAx1_ASAP7_75t_R").
+phymid: running map_oto -> mapper_extract -> phyread -> phyopt -> map
+Derived GENLIB library "asap7sc7p5t_AO_RVT_FF_nldm_211120" with 77 gates using slew 20.00 ps and gain 250.00.
+Total runtime =     0.00 sec
+mapper_extract: starting extraction...
+mapper_extract: extracting to "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv"...
+mapper_extract: max slack = 7.000000
+
+=== DEBUG: Node ID Mapping ===
+Format: objId | Name | Type | Fanin0 | Fanin1 | Gate | pData
+ 10 | n10        | NODE |   1 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 11 | n11        | NODE |   2 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 12 | n12        | NODE |   3 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 13 | n13        | NODE |   4 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 14 | n14        | NODE |   7 |   8 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 15 | n15        | NODE |   7 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 16 | n16        | NODE |   8 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 17 | n17        | NODE |  15 |  16 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 18 | n18        | NODE |  14 |  17 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 19 | n19        | NODE |   6 |  18 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 20 | n20        | NODE |   6 |  -1 | INVx1_ASAP7_75t_R | 0x55fa86e24850
+ 21 | n21        | NODE |  15 |   8 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 22 | n22        | NODE |   7 |  16 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 23 | n23        | NODE |  21 |  22 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 24 | n24        | NODE |  20 |  23 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 25 | n25        | NODE |  19 |  24 | NAND2xp33_ASAP7_75t_R | 0x55fa86e30970
+ 26 | n26        | NODE |  13 |  25 | AND2x2_ASAP7_75t_R | 0x55fa86e2d840
+ 27 | n27        | NODE |  12 |  26 | AND2x2_ASAP7_75t_R | 0x55fa86e2d840
+ 28 | n28        | NODE |  11 |  27 | AND2x2_ASAP7_75t_R | 0x55fa86e2d840
+ 29 | n29        | NODE |  10 |  28 | AND2x2_ASAP7_75t_R | 0x55fa86e2d840
+==============================
+
+mapper_extract: wrote 20 lines to "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv".
+mapper_extract: done.
+Loaded 20 physical records from /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7530 avg_slack=0.1786 avg_opt=0.3279
+Physical records : 20
+Gate summary     : NAND=9 AND=4 INV=7 OTHER=0
+Alpha (L/M/H)    : 0.300 / 0.500 / 0.800
+StructW(i/p/f/g) : 0.500 / 0.400 / 0.050 / 0.050
+phyopt: start rounds=3, criticality partitions high(>=0.900)->low(<=0.250)->mid, window=16, mode=fixed.
+phyopt: objective=delay-non-regression + area minimization (delay_eps=0.001 rel_tol=0 area_eps=0.001 delay_only=off).
+phyopt: case timeout enabled (300 sec).
+phyopt: fit-function on (loaded=yes, samples=4350, l0_scale=0.35, l1_scale=0.25, coef_file=/mnt/d/My_abc_work/abc/my_work/model/phy_fit_function_v1.txt).
+phyopt: sample-log off (keep_target=28% [35%,95%]).
+phyopt: round=1 partition sizes high=14 low=2 mid=4.
+phyopt: part=high seed=n17(id=17 center=17 R=6 tpl=0 crit=1.000 pot=0.1548)
+phyopt: rejected (map area 0.67->0.69, delay 74.40->57.98).
+phyopt: part=high seed=n18(id=18 center=18 R=6 tpl=1 crit=1.000 pot=0.1548)
+phyopt: rejected (map area 0.67->0.70, delay 74.40->58.18).
+phyopt: part=high seed=n19(id=19 center=19 R=6 tpl=2 crit=1.000 pot=0.1548)
+phyopt: rejected (map area 0.67->0.70, delay 74.40->58.18).
+phyopt: part=high seed=n21(id=21 center=21 R=6 tpl=0 crit=1.000 pot=0.1548)
+phyopt: accepted (map area 0.67->0.63, delay 74.40->56.32).
+phyopt: part=high seed=n22(id=22 center=22 R=6 tpl=1 crit=1.000 pot=0.1548)
+Object with ID 22 is not a node or reg output.
+Error: Extracting sequential window has failed.
+Error: phyopt: local optimization failed. Rolling back.
+The node "n24" with ID 24 is not in the current network.
+phyopt: skip seed=n24 (cannot resolve center node in current AIG).
+The node "n25" with ID 25 is not in the current network.
+phyopt: skip seed=n25 (cannot resolve center node in current AIG).
+The node "n26" with ID 26 is not in the current network.
+phyopt: skip seed=n26 (cannot resolve center node in current AIG).
+The node "n27" with ID 27 is not in the current network.
+phyopt: skip seed=n27 (cannot resolve center node in current AIG).
+The node "n28" with ID 28 is not in the current network.
+phyopt: skip seed=n28 (cannot resolve center node in current AIG).
+The node "n29" with ID 29 is not in the current network.
+phyopt: skip seed=n29 (cannot resolve center node in current AIG).
+phyopt: part=high seed=n16(id=16 center=16 R=6 tpl=2 crit=1.000 pot=0.0000)
+phyopt: accepted (map area 0.63->0.59, delay 56.32->48.65).
+phyopt: part=low seed=n10(id=10 center=10 R=3 tpl=0 crit=0.000 pot=1.0000)
+phyopt: rejected (map area 0.59->0.59, delay 48.65->48.65).
+phyopt: part=low seed=n11(id=11 center=11 R=3 tpl=1 crit=0.143 pot=0.9571)
+phyopt: rejected (map area 0.59->0.63, delay 48.65->56.32).
+phyopt: part=mid seed=n12(id=12 center=12 R=4 tpl=0 crit=0.286 pot=0.8571)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->54.18).
+phyopt: part=mid seed=n13(id=13 center=13 R=4 tpl=1 crit=0.429 pot=0.7857)
+phyopt: rejected (map area 0.59->0.75, delay 48.65->54.69).
+phyopt: part=mid seed=n20(id=20 center=20 R=4 tpl=2 crit=0.714 pot=0.6429)
+phyopt: rejected (map area 0.59->0.67, delay 48.65->57.24).
+phyopt: part=mid seed=n14(id=14 center=14 R=4 tpl=0 crit=0.857 pot=0.4583)
+phyopt: rejected (map area 0.59->0.75, delay 48.65->54.69).
+phyopt: finished round 1/3.
+mapper_extract: wrote 20 lines to "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv".
+Loaded 20 physical records from /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7530 avg_slack=0.3750 avg_opt=0.5037
+phyopt: round=2 partition sizes high=6 low=1 mid=13.
+phyopt: part=high seed=n14(id=14 center=14 R=6 tpl=0 crit=1.000 pot=0.1548)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->47.30).
+The node "n24" with ID 24 is not in the current network.
+phyopt: skip seed=n24 (cannot resolve center node in current AIG).
+The node "n29" with ID 29 is not in the current network.
+phyopt: skip seed=n29 (cannot resolve center node in current AIG).
+phyopt: part=high seed=n13(id=13 center=13 R=6 tpl=2 crit=1.000 pot=0.0000)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->47.30).
+The node "n26" with ID 26 is not in the current network.
+phyopt: skip seed=n26 (cannot resolve center node in current AIG).
+phyopt: part=mid seed=n12(id=12 center=12 R=4 tpl=1 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->54.18).
+phyopt: part=mid seed=n18(id=18 center=18 R=4 tpl=2 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.59, delay 48.65->48.65).
+phyopt: part=mid seed=n20(id=20 center=20 R=4 tpl=2 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.67, delay 48.65->57.24).
+phyopt: part=mid seed=n11(id=11 center=11 R=4 tpl=0 crit=0.500 pot=0.6369)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->54.18).
+phyopt: part=mid seed=n19(id=19 center=19 R=4 tpl=1 crit=0.500 pot=0.6369)
+phyopt: rejected (map area 0.59->0.59, delay 48.65->48.65).
+The node "n25" with ID 25 is not in the current network.
+phyopt: skip seed=n25 (cannot resolve center node in current AIG).
+The node "n27" with ID 27 is not in the current network.
+phyopt: skip seed=n27 (cannot resolve center node in current AIG).
+The node "n28" with ID 28 is not in the current network.
+phyopt: skip seed=n28 (cannot resolve center node in current AIG).
+phyopt: part=mid seed=n10(id=10 center=10 R=4 tpl=2 crit=0.500 pot=0.2500)
+phyopt: rejected (map area 0.59->0.63, delay 48.65->56.32).
+phyopt: finished round 2/3.
+mapper_extract: wrote 20 lines to "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv".
+Loaded 20 physical records from /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/compare_4way_out_smabc_method_asap7/tmp/rd84_raw_flow.phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7530 avg_slack=0.3750 avg_opt=0.5037
+phyopt: round=3 partition sizes high=6 low=1 mid=13.
+phyopt: part=high seed=n14(id=14 center=14 R=6 tpl=0 crit=1.000 pot=0.1548)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->47.30).
+The node "n24" with ID 24 is not in the current network.
+phyopt: skip seed=n24 (cannot resolve center node in current AIG).
+The node "n29" with ID 29 is not in the current network.
+phyopt: skip seed=n29 (cannot resolve center node in current AIG).
+phyopt: part=high seed=n13(id=13 center=13 R=6 tpl=2 crit=1.000 pot=0.0000)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->47.30).
+The node "n26" with ID 26 is not in the current network.
+phyopt: skip seed=n26 (cannot resolve center node in current AIG).
+phyopt: part=mid seed=n12(id=12 center=12 R=4 tpl=2 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->54.18).
+phyopt: part=mid seed=n18(id=18 center=18 R=4 tpl=0 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.59, delay 48.65->48.65).
+phyopt: part=mid seed=n20(id=20 center=20 R=4 tpl=1 crit=0.500 pot=0.7500)
+phyopt: rejected (map area 0.59->0.67, delay 48.65->57.24).
+phyopt: part=mid seed=n11(id=11 center=11 R=4 tpl=2 crit=0.500 pot=0.6369)
+phyopt: rejected (map area 0.59->0.60, delay 48.65->54.18).
+phyopt: part=mid seed=n19(id=19 center=19 R=4 tpl=0 crit=0.500 pot=0.6369)
+phyopt: rejected (map area 0.59->0.59, delay 48.65->48.65).
+The node "n25" with ID 25 is not in the current network.
+phyopt: skip seed=n25 (cannot resolve center node in current AIG).
+The node "n27" with ID 27 is not in the current network.
+phyopt: skip seed=n27 (cannot resolve center node in current AIG).
+The node "n28" with ID 28 is not in the current network.
+phyopt: skip seed=n28 (cannot resolve center node in current AIG).
+phyopt: part=mid seed=n10(id=10 center=10 R=4 tpl=2 crit=0.500 pot=0.2500)
+phyopt: rejected (map area 0.59->0.63, delay 48.65->56.32).
+phyopt: finished round 3/3.
+phyopt: partition summary (tried/accepted):
+  high : 2 / 10
+  low  : 0 / 2
+  mid  : 0 / 16
+phyopt: per-part seed coverage (topK means top-5 potential within processed seeds):
+  high: seeds=26 tried=10(38.5%) accepted=2(20.0%) skipped(marked=6,low_slack=0) topK(tried=7/15 accepted=1 hit=14.3%)
+  low: seeds=4 tried=2(50.0%) accepted=0(0.0%) skipped(marked=0,low_slack=0) topK(tried=2/4 accepted=0 hit=0.0%)
+  mid: seeds=30 tried=16(53.3%) accepted=0(0.0%) skipped(marked=8,low_slack=0) topK(tried=10/14 accepted=0 hit=0.0%)
+phyopt: sequence template stats by partition (template_id: accepted/tried):
+  high: t0=1/4 t1=0/2 t2=1/4
+  low: t0=0/1 t1=0/1 t2=0/0
+  mid: t0=0/5 t1=0/4 t2=0/7
+phyopt: rejection reason breakdown:
+  - runtime_or_eval_fail : 19
+  - policy_tradeoff_reject : 5
+  - delay_worse : 0
+  - area_worse : 7
+  - area_and_delay_worse : 13
+  - delay_guard_violation : 0
+phyopt: skipped marked=14 low_slack=<0.10=0
+phyopt: done, accepted=2 rejected=44 final_nodes=13 final_levels=5.
+Derived GENLIB library "asap7sc7p5t_AO_RVT_FF_nldm_211120" with 77 gates using slew 20.00 ps and gain 250.00.
+Converting "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/asap7_orfs_combined_RVT_FF_nldm.genlib" into supergate library "/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/asap7_orfs_combined_RVT_FF_nldm.super".
+Maximum level: Original = 5. Reduced due to choices = 5.
+Choice stats:  Choice nodes = 0. Total choices = 0.
+Nodes =     21.  Total 5-feasible cuts =         55.  Per node = 2.6. Time =     0.00 sec
+Delay    : Delay =     0.00  Flow =         0.5  Area =         0.6   0.0 %   Time =     0.00 sec
+AreaFlow : Delay =    48.65  Flow =         0.5  Area =         0.6   0.0 %   Time =     0.00 sec
+Area     : Delay =    48.65  Flow =         0.0  Area =         0.6   0.0 %   Time =     0.00 sec
+Area     : Delay =    48.65  Flow =         0.0  Area =         0.6   0.0 %   Time =     0.00 sec
+Output  po0    : Delay = (48.65, 48.65)  POS
+Total runtime =     0.01 sec
+phymid: done. You can now run write_verilog/write_blif (or strash; write_aiger).
+[1;37m/mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_raw/rd84_raw:[0m i/o =    8/    1  lat =    0  nd =     7  edge =     18  area = 0.59  delay =48.65  lev = 3

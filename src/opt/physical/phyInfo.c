@@ -1,4 +1,5 @@
 #include "phyInfo.h"
+#include "phyOpt.h"
 
 ABC_NAMESPACE_IMPL_START
 
@@ -66,10 +67,20 @@ static int Phy_FieldIsInteger( const char * pField )
     return 1;
 }
 
+static float Phy_SelectPotentialByCriticality( const Phy_NodeInfo_t * pInfo, float CritLow, float CritHigh )
+{
+    if ( pInfo->Criticality >= CritHigh )
+        return pInfo->OptPotentialHigh;
+    if ( pInfo->Criticality <= CritLow )
+        return pInfo->OptPotentialLow;
+    return pInfo->OptPotentialMiddle;
+}
+
 static Phy_NodeInfo_t * Phy_NodeInfoParse( char * pLine )
 {
     char * pFields[32];
     Phy_NodeInfo_t * pInfo;
+    float CritLow = 0.0f, CritHigh = 0.0f;
     int nFields;
     int fHasTailIds = 0;
 
@@ -96,6 +107,9 @@ static Phy_NodeInfo_t * Phy_NodeInfoParse( char * pLine )
     pInfo->Criticality = (float)atof( pFields[13] );
     pInfo->OptPotentialOrig = (float)atof( pFields[14] );
     pInfo->OptPotential = pInfo->OptPotentialOrig;
+    pInfo->OptPotentialLow = pInfo->OptPotentialOrig;
+    pInfo->OptPotentialMiddle = pInfo->OptPotentialOrig;
+    pInfo->OptPotentialHigh = pInfo->OptPotentialOrig;
 
     fHasTailIds = (nFields >= 17) && Phy_FieldIsInteger( pFields[nFields - 2] ) && Phy_FieldIsInteger( pFields[nFields - 1] );
 
@@ -126,7 +140,9 @@ static Phy_NodeInfo_t * Phy_NodeInfoParse( char * pLine )
         pInfo->StructPotentialRaw = (float)atof( pFields[15] );
         pInfo->StructPotential = (float)atof( pFields[16] );
         pInfo->SlackPotential = (float)atof( pFields[17] );
+        pInfo->OptPotentialLow = (float)atof( pFields[18] );
         pInfo->OptPotentialMiddle = (float)atof( pFields[18] );
+        pInfo->OptPotentialHigh = (float)atof( pFields[18] );
         pInfo->OptPotential = pInfo->OptPotentialMiddle;
     }
     if ( fHasTailIds && !(nFields >= 23) )
@@ -134,6 +150,8 @@ static Phy_NodeInfo_t * Phy_NodeInfoParse( char * pLine )
         pInfo->Fanin0ObjId = atoi( pFields[nFields - 2] );
         pInfo->Fanin1ObjId = atoi( pFields[nFields - 1] );
     }
+    Phy_GetPartitionThresholds( &CritLow, &CritHigh );
+    pInfo->OptPotential = Phy_SelectPotentialByCriticality( pInfo, CritLow, CritHigh );
     return pInfo;
 }
 
@@ -153,6 +171,34 @@ static int Phy_GateStartsWith( const char * pName, const char * pPref )
     return 1;
 }
 
+static float s_StructWInvChain = 0.40f;
+static float s_StructWPairCollapse = 0.30f;
+static float s_StructWFanoutEase = 0.20f;
+static float s_StructWGateScore = 0.10f;
+
+void Phy_SetStructRawWeights( float WInvChain, float WPairCollapse, float WFanoutEase, float WGateScore )
+{
+    float Sum = WInvChain + WPairCollapse + WFanoutEase + WGateScore;
+    if ( WInvChain < 0.0f || WPairCollapse < 0.0f || WFanoutEase < 0.0f || WGateScore < 0.0f || Sum <= 1e-9f )
+        return;
+    s_StructWInvChain = WInvChain / Sum;
+    s_StructWPairCollapse = WPairCollapse / Sum;
+    s_StructWFanoutEase = WFanoutEase / Sum;
+    s_StructWGateScore = WGateScore / Sum;
+}
+
+void Phy_GetStructRawWeights( float * pWInvChain, float * pWPairCollapse, float * pWFanoutEase, float * pWGateScore )
+{
+    if ( pWInvChain )
+        *pWInvChain = s_StructWInvChain;
+    if ( pWPairCollapse )
+        *pWPairCollapse = s_StructWPairCollapse;
+    if ( pWFanoutEase )
+        *pWFanoutEase = s_StructWFanoutEase;
+    if ( pWGateScore )
+        *pWGateScore = s_StructWGateScore;
+}
+
 static float Phy_StructPotentialRaw( const Phy_NodeInfo_t * p )
 {
     float gateScore, fanoutEase, invChainProxy, pairCollapseProxy;
@@ -168,12 +214,16 @@ static float Phy_StructPotentialRaw( const Phy_NodeInfo_t * p )
     invChainProxy = (Phy_GateStartsWith( p->GateName, "INV" ) && p->FaninCount == 1 && p->Fanout <= 1) ? 1.0f : 0.0f;
     pairCollapseProxy = ((Phy_GateStartsWith( p->GateName, "NAND" ) || Phy_GateStartsWith( p->GateName, "AND" )) && p->FaninCount == 2 && p->Fanout <= 2) ? 1.0f : 0.0f;
 
-    return 0.40f * invChainProxy + 0.30f * pairCollapseProxy + 0.20f * fanoutEase + 0.10f * gateScore;
+    return s_StructWInvChain * invChainProxy
+        + s_StructWPairCollapse * pairCollapseProxy
+        + s_StructWFanoutEase * fanoutEase
+        + s_StructWGateScore * gateScore;
 }
 
 void Phy_DataRecomputePotential( Phy_Data_t * pData, float AlphaLow, float AlphaMiddle, float AlphaHigh, int fVerbose )
 {
     Phy_NodeInfo_t * pInfo;
+    float CritLow = 0.0f, CritHigh = 0.0f;
     int i;
     float MinStruct = 1e30f, MaxStruct = -1e30f;
     float MinSlack  = 1e30f, MaxSlack  = -1e30f;
@@ -188,6 +238,7 @@ void Phy_DataRecomputePotential( Phy_Data_t * pData, float AlphaLow, float Alpha
     pData->AlphaLow = AlphaLow;
     pData->AlphaMiddle = AlphaMiddle;
     pData->AlphaHigh = AlphaHigh;
+    Phy_GetPartitionThresholds( &CritLow, &CritHigh );
 
     Vec_PtrForEachEntry( Phy_NodeInfo_t *, pData->vNodes, pInfo, i )
     {
@@ -214,17 +265,17 @@ void Phy_DataRecomputePotential( Phy_Data_t * pData, float AlphaLow, float Alpha
         pInfo->OptPotentialLow = AlphaLow * pInfo->SlackPotential + (1.0f - AlphaLow) * pInfo->StructPotential;
         pInfo->OptPotentialMiddle = AlphaMiddle * pInfo->SlackPotential + (1.0f - AlphaMiddle) * pInfo->StructPotential;
         pInfo->OptPotentialHigh = AlphaHigh * pInfo->SlackPotential + (1.0f - AlphaHigh) * pInfo->StructPotential;
-        pInfo->OptPotential = pInfo->OptPotentialMiddle;
+        pInfo->OptPotential = Phy_SelectPotentialByCriticality( pInfo, CritLow, CritHigh );
 
         SumStruct += pInfo->StructPotential;
         SumSlack += pInfo->SlackPotential;
-        SumOpt += pInfo->OptPotentialMiddle;
+        SumOpt += pInfo->OptPotential;
     }
 
     if ( fVerbose && Vec_PtrSize(pData->vNodes) > 0 )
     {
         float nInv = 1.0f / (float)Vec_PtrSize(pData->vNodes);
-        Abc_Print( 1, "Potential rebuilt: alpha(low/mid/high)=%.3f/%.3f/%.3f avg_struct=%.4f avg_slack=%.4f avg_opt_mid=%.4f\n",
+        Abc_Print( 1, "Potential rebuilt: alpha(low/mid/high)=%.3f/%.3f/%.3f avg_struct=%.4f avg_slack=%.4f avg_opt=%.4f\n",
             AlphaLow, AlphaMiddle, AlphaHigh, SumStruct * nInv, SumSlack * nInv, SumOpt * nInv );
     }
 }
@@ -249,6 +300,10 @@ Phy_Data_t * Phy_DataReadCsv( const char * pFileName, float AlphaLow, float Alph
     pData->AlphaLow = Phy_FltClamp01( AlphaLow );
     pData->AlphaMiddle = Phy_FltClamp01( AlphaMiddle );
     pData->AlphaHigh = Phy_FltClamp01( AlphaHigh );
+    pData->StructWInvChain = s_StructWInvChain;
+    pData->StructWPairCollapse = s_StructWPairCollapse;
+    pData->StructWFanoutEase = s_StructWFanoutEase;
+    pData->StructWGateScore = s_StructWGateScore;
 
     if ( fgets( Buffer, sizeof(Buffer), pFile ) == NULL )
     {
@@ -353,6 +408,8 @@ void Phy_DataPrintStats( Phy_Data_t * pData )
     Abc_Print( 1, "Physical records : %d\n", Vec_PtrSize(pData->vNodes) );
     Abc_Print( 1, "Gate summary     : NAND=%d AND=%d INV=%d OTHER=%d\n", nNand, nAnd, nInv, nOther );
     Abc_Print( 1, "Alpha (L/M/H)    : %.3f / %.3f / %.3f\n", pData->AlphaLow, pData->AlphaMiddle, pData->AlphaHigh );
+    Abc_Print( 1, "StructW(i/p/f/g) : %.3f / %.3f / %.3f / %.3f\n",
+        pData->StructWInvChain, pData->StructWPairCollapse, pData->StructWFanoutEase, pData->StructWGateScore );
 }
 
 static int Phy_NodeCmpOptPotential( const void * pA, const void * pB )

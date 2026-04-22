@@ -64,6 +64,7 @@
 #include "opt/fret/fretime.h"
 #include "opt/nwk/nwkMerge.h"
 #include "opt/physical/phyInfo.h"
+#include "opt/physical/phyOpt.h"
 #include "base/acb/acbPar.h"
 #include "misc/extra/extra.h"
 #include "opt/eslim/eSLIM.h"
@@ -304,6 +305,8 @@ static int Abc_CommandMapOto                 ( Abc_Frame_t * pAbc, int argc, cha
 static int Abc_CommandPhyRead                ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandPhySort                ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandPhyWrite               ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPhyOpt                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
+static int Abc_CommandPhyMid                 ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandAmap                   ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandPhaseMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
 static int Abc_CommandStochMap               ( Abc_Frame_t * pAbc, int argc, char ** argv );
@@ -1152,6 +1155,8 @@ void Abc_Init( Abc_Frame_t * pAbc )
     Cmd_CommandAdd( pAbc, "Physical",     "phyread",       Abc_CommandPhyRead,          0 );
     Cmd_CommandAdd( pAbc, "Physical",     "physort",       Abc_CommandPhySort,          0 );
     Cmd_CommandAdd( pAbc, "Physical",     "phywrite",      Abc_CommandPhyWrite,         0 );
+    Cmd_CommandAdd( pAbc, "Physical",     "phyopt",        Abc_CommandPhyOpt,           1 );
+    Cmd_CommandAdd( pAbc, "Physical",     "phymid",        Abc_CommandPhyMid,           1 );
     Cmd_CommandAdd( pAbc, "Mapping", "mapper_extract",     Mapper_CommandExtract, 0 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "amap",          Abc_CommandAmap,             1 );
     Cmd_CommandAdd( pAbc, "SC mapping",   "phase_map",     Abc_CommandPhaseMap,         1 );
@@ -21298,14 +21303,17 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     char * pFileName;
     int fVerbose = 1;
-    float AlphaLow = 0.20f;
+    float AlphaLow = 0.30f;
     float AlphaMiddle = 0.50f;
     float AlphaHigh = 0.80f;
+    float WInvChain, WPairCollapse, WFanoutEase, WGateScore;
     int c;
     (void)pAbc;
 
+    Phy_GetStructRawWeights( &WInvChain, &WPairCollapse, &WFanoutEase, &WGateScore );
+
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "vLMHh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vLMHipfgh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21345,6 +21353,50 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
             if ( AlphaHigh < 0.0f || AlphaHigh > 1.0f )
                 goto usage;
             break;
+        case 'i':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-i\" should be followed by a non-negative floating point number.\n" );
+                goto usage;
+            }
+            WInvChain = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( WInvChain < 0.0f )
+                goto usage;
+            break;
+        case 'p':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-p\" should be followed by a non-negative floating point number.\n" );
+                goto usage;
+            }
+            WPairCollapse = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( WPairCollapse < 0.0f )
+                goto usage;
+            break;
+        case 'f':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-f\" should be followed by a non-negative floating point number.\n" );
+                goto usage;
+            }
+            WFanoutEase = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( WFanoutEase < 0.0f )
+                goto usage;
+            break;
+        case 'g':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-g\" should be followed by a non-negative floating point number.\n" );
+                goto usage;
+            }
+            WGateScore = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( WGateScore < 0.0f )
+                goto usage;
+            break;
         case 'h':
             goto usage;
         default:
@@ -21358,6 +21410,13 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
         goto usage;
     }
     pFileName = argv[globalUtilOptind];
+
+    if ( WInvChain + WPairCollapse + WFanoutEase + WGateScore <= 1e-9f )
+    {
+        Abc_Print( -1, "phyread: struct_raw feature weights sum to zero.\n" );
+        goto usage;
+    }
+    Phy_SetStructRawWeights( WInvChain, WPairCollapse, WFanoutEase, WGateScore );
 
     if ( s_pPhyData )
     {
@@ -21373,11 +21432,15 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: phyread [-L float] [-M float] [-H float] [-vh] <file.csv>\n" );
+    Abc_Print( -2, "usage: phyread [-L float] [-M float] [-H float] [-i float] [-p float] [-f float] [-g float] [-vh] <file.csv>\n" );
     Abc_Print( -2, "\t         reads extracted physical CSV information into memory\n" );
     Abc_Print( -2, "\t-L float: alpha for low-criticality potential   [default = %.2f]\n", AlphaLow );
     Abc_Print( -2, "\t-M float: alpha for middle-criticality potential[default = %.2f]\n", AlphaMiddle );
     Abc_Print( -2, "\t-H float: alpha for high-criticality potential  [default = %.2f]\n", AlphaHigh );
+    Abc_Print( -2, "\t-i float: struct_raw weight for inv-chain proxy [default = %.2f]\n", WInvChain );
+    Abc_Print( -2, "\t-p float: struct_raw weight for pair-collapse   [default = %.2f]\n", WPairCollapse );
+    Abc_Print( -2, "\t-f float: struct_raw weight for fanout-ease     [default = %.2f]\n", WFanoutEase );
+    Abc_Print( -2, "\t-g float: struct_raw weight for gate-score      [default = %.2f]\n", WGateScore );
     Abc_Print( -2, "\t-v     : toggle verbose readout [default = yes]\n" );
     Abc_Print( -2, "\t-h     : print the command usage\n" );
     return 1;
@@ -21538,6 +21601,378 @@ usage:
     Abc_Print( -2, "\t         writes loaded physical records with rebuilt potential columns\n" );
     Abc_Print( -2, "\t         if file is omitted, overwrites the source CSV loaded by phyread\n" );
     Abc_Print( -2, "\t-v     : toggle verbose writeout [default = yes]\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n" );
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Runs physical-guided iterative optimization on current AIG.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    int nRounds = 3;
+    int nTop = 10;
+    int nCaseTimeoutSec = 0;
+    int fVerbose = 1;
+    int fDynamicOrder = 0;
+    float CritLow, CritHigh;
+    int c;
+
+    Phy_GetPartitionThresholds( &CritLow, &CritHigh );
+
+    if ( Abc_FrameReadNtk(pAbc) == NULL )
+    {
+        Abc_Print( -1, "phyopt: no current network. Read an AIG first.\n" );
+        return 1;
+    }
+    if ( s_pPhyData == NULL )
+    {
+        Abc_Print( -1, "phyopt: no physical data loaded. Run 'phyread <file.csv>' first.\n" );
+        return 1;
+    }
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "nkLHtdvh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'n':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-n\" should be followed by a positive integer.\n" );
+                goto usage;
+            }
+            nRounds = atoi( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( nRounds <= 0 )
+                goto usage;
+            break;
+        case 'k':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-k\" should be followed by a non-negative integer.\n" );
+                goto usage;
+            }
+            nTop = atoi( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( nTop < 0 )
+                goto usage;
+            break;
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'd':
+            fDynamicOrder ^= 1;
+            break;
+        case 'L':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-L\" should be followed by a floating point number in [0,1].\n" );
+                goto usage;
+            }
+            CritLow = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( CritLow < 0.0f || CritLow > 1.0f )
+                goto usage;
+            break;
+        case 'H':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-H\" should be followed by a floating point number in [0,1].\n" );
+                goto usage;
+            }
+            CritHigh = (float)atof( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( CritHigh < 0.0f || CritHigh > 1.0f )
+                goto usage;
+            break;
+        case 't':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-t\" should be followed by a non-negative integer (seconds).\n" );
+                goto usage;
+            }
+            nCaseTimeoutSec = atoi( argv[globalUtilOptind] );
+            globalUtilOptind++;
+            if ( nCaseTimeoutSec < 0 )
+                goto usage;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( !Phy_SetPartitionThresholds( CritLow, CritHigh ) )
+    {
+        Abc_Print( -1, "phyopt: invalid criticality thresholds (require 0<=low<high<=1).\n" );
+        goto usage;
+    }
+
+    return Phy_OptRun( pAbc, s_pPhyData, nRounds, nTop, fVerbose, fDynamicOrder, nCaseTimeoutSec );
+
+usage:
+    Abc_Print( -2, "usage: phyopt [-n num] [-k num] [-L float] [-H float] [-t sec] [-dvh]\n" );
+    Abc_Print( -2, "\t         runs physical-guided partitioned optimization on the current network\n" );
+    Abc_Print( -2, "\t         expected flow: read_aiger -> ... -> mapper_extract -> phyread -> phyopt -> write_aiger\n" );
+    Abc_Print( -2, "\t-n num : number of optimization rounds [default = %d]\n", nRounds );
+    Abc_Print( -2, "\t-k num : partition size (nodes per partition in sorted potential order) [default = %d]\n", nTop );
+    Abc_Print( -2, "\t-L float: low-criticality threshold [default = %.2f]\n", CritLow );
+    Abc_Print( -2, "\t-H float: high-criticality threshold [default = %.2f]\n", CritHigh );
+    Abc_Print( -2, "\t-t sec : per-case optimization timeout in seconds (0 disables; env fallback PHY_DYN_CASE_TIMEOUT_SEC) [default = %d]\n", nCaseTimeoutSec );
+    Abc_Print( -2, "\t-d     : toggle dynamic per-AIG node scheduling (15%% init, 5%% leader, 1%% probe, dual early-stop) [default = no]\n" );
+    Abc_Print( -2, "\t-v     : toggle verbose output [default = yes]\n" );
+    Abc_Print( -2, "\t-h     : print the command usage\n" );
+    return 1;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Runs middle physical flow between read and write steps.]
+
+  Description []
+
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
+{
+    char * pCsvFile = "output.csv";
+    int nRounds = 3;
+    int nTop = 40;
+    int nCaseTimeoutSec = 300;
+    int fVerbose = 1;
+    int fDynamicOrder = 1;
+    float CritLow = 0.25f;
+    float CritHigh = 0.90f;
+    float WInvChain = 0.50f;
+    float WPairCollapse = 0.40f;
+    float WFanoutEase = 0.05f;
+    float WGateScore = 0.05f;
+    char BufRounds[32], BufTop[32], BufLow[32], BufHigh[32], BufTimeout[32];
+    char BufInv[32], BufPair[32], BufFan[32], BufGate[32];
+    char * pArgvMapOto[3];
+    char * pArgvExtract[5];
+    char * pArgvPhyRead[16];
+    char * pArgvPhyOpt[20];
+    char * pArgvMap[3];
+    int nArgcMapOto, nArgcExtract, nArgcPhyRead, nArgcPhyOpt, nArgcMap;
+    int c;
+
+    Extra_UtilGetoptReset();
+    while ( ( c = Extra_UtilGetopt( argc, argv, "C:n:k:L:H:t:i:p:f:g:dvh" ) ) != EOF )
+    {
+        switch ( c )
+        {
+        case 'C':
+            pCsvFile = (char *)globalUtilOptarg;
+            break;
+        case 'n':
+            nRounds = atoi( globalUtilOptarg );
+            if ( nRounds <= 0 )
+                goto usage;
+            break;
+        case 'k':
+            nTop = atoi( globalUtilOptarg );
+            if ( nTop < 0 )
+                goto usage;
+            break;
+        case 'L':
+            CritLow = (float)atof( globalUtilOptarg );
+            if ( CritLow < 0.0f || CritLow > 1.0f )
+                goto usage;
+            break;
+        case 'H':
+            CritHigh = (float)atof( globalUtilOptarg );
+            if ( CritHigh < 0.0f || CritHigh > 1.0f )
+                goto usage;
+            break;
+        case 't':
+            nCaseTimeoutSec = atoi( globalUtilOptarg );
+            if ( nCaseTimeoutSec < 0 )
+                goto usage;
+            break;
+        case 'i':
+            WInvChain = (float)atof( globalUtilOptarg );
+            if ( WInvChain < 0.0f )
+                goto usage;
+            break;
+        case 'p':
+            WPairCollapse = (float)atof( globalUtilOptarg );
+            if ( WPairCollapse < 0.0f )
+                goto usage;
+            break;
+        case 'f':
+            WFanoutEase = (float)atof( globalUtilOptarg );
+            if ( WFanoutEase < 0.0f )
+                goto usage;
+            break;
+        case 'g':
+            WGateScore = (float)atof( globalUtilOptarg );
+            if ( WGateScore < 0.0f )
+                goto usage;
+            break;
+        case 'd':
+            fDynamicOrder ^= 1;
+            break;
+        case 'v':
+            fVerbose ^= 1;
+            break;
+        case 'h':
+            goto usage;
+        default:
+            goto usage;
+        }
+    }
+
+    if ( globalUtilOptind < argc )
+    {
+        Abc_Print( -1, "phymid: unexpected positional argument \"%s\".\n", argv[globalUtilOptind] );
+        goto usage;
+    }
+
+    if ( pCsvFile == NULL || pCsvFile[0] == '\0' )
+    {
+        Abc_Print( -1, "phymid: CSV output path cannot be empty.\n" );
+        goto usage;
+    }
+
+    if ( WInvChain + WPairCollapse + WFanoutEase + WGateScore <= 1e-9f )
+    {
+        Abc_Print( -1, "phymid: struct_raw feature weights sum to zero.\n" );
+        goto usage;
+    }
+
+    if ( !Phy_SetPartitionThresholds( CritLow, CritHigh ) )
+    {
+        Abc_Print( -1, "phymid: invalid criticality thresholds (require 0<=low<high<=1).\n" );
+        goto usage;
+    }
+
+    if ( Abc_FrameReadNtk(pAbc) == NULL )
+    {
+        Abc_Print( -1, "phymid: no current network. Run read_aiger (or another read command) first.\n" );
+        return 1;
+    }
+
+    if ( fVerbose )
+        Abc_Print( 1, "phymid: running map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
+
+    nArgcMapOto = 0;
+    pArgvMapOto[nArgcMapOto++] = "map_oto";
+    if ( fVerbose )
+        pArgvMapOto[nArgcMapOto++] = "-v";
+    if ( Abc_CommandMapOto( pAbc, nArgcMapOto, pArgvMapOto ) )
+    {
+        Abc_Print( -1, "phymid: step map_oto failed.\n" );
+        return 1;
+    }
+
+    nArgcExtract = 0;
+    pArgvExtract[nArgcExtract++] = "mapper_extract";
+    pArgvExtract[nArgcExtract++] = "-o";
+    pArgvExtract[nArgcExtract++] = pCsvFile;
+    if ( fVerbose )
+        pArgvExtract[nArgcExtract++] = "-v";
+    if ( Mapper_CommandExtract( pAbc, nArgcExtract, pArgvExtract ) )
+    {
+        Abc_Print( -1, "phymid: step mapper_extract failed.\n" );
+        return 1;
+    }
+
+    sprintf( BufInv, "%.6g", WInvChain );
+    sprintf( BufPair, "%.6g", WPairCollapse );
+    sprintf( BufFan, "%.6g", WFanoutEase );
+    sprintf( BufGate, "%.6g", WGateScore );
+
+    nArgcPhyRead = 0;
+    pArgvPhyRead[nArgcPhyRead++] = "phyread";
+    if ( !fVerbose )
+        pArgvPhyRead[nArgcPhyRead++] = "-v";
+    pArgvPhyRead[nArgcPhyRead++] = "-i";
+    pArgvPhyRead[nArgcPhyRead++] = BufInv;
+    pArgvPhyRead[nArgcPhyRead++] = "-p";
+    pArgvPhyRead[nArgcPhyRead++] = BufPair;
+    pArgvPhyRead[nArgcPhyRead++] = "-f";
+    pArgvPhyRead[nArgcPhyRead++] = BufFan;
+    pArgvPhyRead[nArgcPhyRead++] = "-g";
+    pArgvPhyRead[nArgcPhyRead++] = BufGate;
+    pArgvPhyRead[nArgcPhyRead++] = pCsvFile;
+    if ( Abc_CommandPhyRead( pAbc, nArgcPhyRead, pArgvPhyRead ) )
+    {
+        Abc_Print( -1, "phymid: step phyread failed.\n" );
+        return 1;
+    }
+
+    sprintf( BufRounds, "%d", nRounds );
+    sprintf( BufTop, "%d", nTop );
+    sprintf( BufLow, "%.6g", CritLow );
+    sprintf( BufHigh, "%.6g", CritHigh );
+    sprintf( BufTimeout, "%d", nCaseTimeoutSec );
+
+    nArgcPhyOpt = 0;
+    pArgvPhyOpt[nArgcPhyOpt++] = "phyopt";
+    if ( fDynamicOrder )
+        pArgvPhyOpt[nArgcPhyOpt++] = "-d";
+    if ( !fVerbose )
+        pArgvPhyOpt[nArgcPhyOpt++] = "-v";
+    pArgvPhyOpt[nArgcPhyOpt++] = "-n";
+    pArgvPhyOpt[nArgcPhyOpt++] = BufRounds;
+    pArgvPhyOpt[nArgcPhyOpt++] = "-k";
+    pArgvPhyOpt[nArgcPhyOpt++] = BufTop;
+    pArgvPhyOpt[nArgcPhyOpt++] = "-L";
+    pArgvPhyOpt[nArgcPhyOpt++] = BufLow;
+    pArgvPhyOpt[nArgcPhyOpt++] = "-H";
+    pArgvPhyOpt[nArgcPhyOpt++] = BufHigh;
+    pArgvPhyOpt[nArgcPhyOpt++] = "-t";
+    pArgvPhyOpt[nArgcPhyOpt++] = BufTimeout;
+    if ( Abc_CommandPhyOpt( pAbc, nArgcPhyOpt, pArgvPhyOpt ) )
+    {
+        Abc_Print( -1, "phymid: step phyopt failed.\n" );
+        return 1;
+    }
+
+    nArgcMap = 0;
+    pArgvMap[nArgcMap++] = "map";
+    if ( fVerbose )
+        pArgvMap[nArgcMap++] = "-v";
+    if ( Abc_CommandMap( pAbc, nArgcMap, pArgvMap ) )
+    {
+        Abc_Print( -1, "phymid: final map failed.\n" );
+        return 1;
+    }
+
+    if ( fVerbose )
+        Abc_Print( 1, "phymid: done. You can now run write_verilog/write_blif (or strash; write_aiger).\n" );
+    return 0;
+
+usage:
+    Abc_Print( -2, "usage: phymid [-C file.csv] [-n num] [-k num] [-L float] [-H float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
+    Abc_Print( -2, "\t         runs middle flow only: map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
+    Abc_Print( -2, "\t         keep IO outside: read_aiger ...; phymid ...; write_verilog/write_blif ...\n" );
+    Abc_Print( -2, "\t-C file: CSV path used by mapper_extract and phyread [default = %s]\n", pCsvFile );
+    Abc_Print( -2, "\t-n num : number of optimization rounds (phyopt -n) [default = %d]\n", nRounds );
+    Abc_Print( -2, "\t-k num : partition size/top-k (phyopt -k) [default = %d]\n", nTop );
+    Abc_Print( -2, "\t-L float: low-criticality threshold (phyopt -L) [default = %.2f]\n", CritLow );
+    Abc_Print( -2, "\t-H float: high-criticality threshold (phyopt -H) [default = %.2f]\n", CritHigh );
+    Abc_Print( -2, "\t-t sec : per-case timeout seconds (phyopt -t) [default = %d]\n", nCaseTimeoutSec );
+    Abc_Print( -2, "\t-i float: struct_raw weight inv-chain (phyread -i) [default = %.2f]\n", WInvChain );
+    Abc_Print( -2, "\t-p float: struct_raw weight pair-collapse (phyread -p) [default = %.2f]\n", WPairCollapse );
+    Abc_Print( -2, "\t-f float: struct_raw weight fanout-ease (phyread -f) [default = %.2f]\n", WFanoutEase );
+    Abc_Print( -2, "\t-g float: struct_raw weight gate-score (phyread -g) [default = %.2f]\n", WGateScore );
+    Abc_Print( -2, "\t-d     : toggle dynamic per-AIG scheduling in phyopt [default = %s]\n", fDynamicOrder ? "yes" : "no" );
+    Abc_Print( -2, "\t-v     : toggle verbose output [default = %s]\n", fVerbose ? "yes" : "no" );
     Abc_Print( -2, "\t-h     : print the command usage\n" );
     return 1;
 }

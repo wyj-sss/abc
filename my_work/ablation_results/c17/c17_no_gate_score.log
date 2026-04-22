@@ -1,0 +1,43 @@
+======== ABC command line "source /tmp/ablation_c17_no_gate_score_287.scr"
+Warning: Detected 2 multi-output cells (for example, "FA_X1").
+mapper_extract: wrote 6 lines to "/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_gate_score.csv".
+Loaded 6 physical records from /mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_gate_score.csv
+Potential rebuilt: alpha(low/mid/high)=0.200/0.500/0.800 avg_struct=0.6667 avg_slack=0.1667 avg_opt_mid=0.4167
+Physical records : 6
+Gate summary     : NAND=6 AND=0 INV=0 OTHER=0
+Alpha (L/M/H)    : 0.200 / 0.500 / 0.800
+StructW(i/p/f/g) : 0.444 / 0.333 / 0.222 / 0.000
+phyopt: start rounds=1, criticality partitions high(>=0.800)->low(<=0.300)->mid, window=16.
+phyopt: objective=map(area,delay), low-part delay budget=+10% from pre-opt.
+phyopt: round=1 partition sizes high=5 low=1 mid=0.
+phyopt: round=1 part=high seed=n11(id=11 center=11 R=6 crit=1.000 pot=0.2000)
+phyopt: accepted (map area 5.05->5.05, delay 2.00->2.00).
+phyopt: round=1 part=high seed=n12(id=12 center=12 R=6 crit=1.000 pot=0.2000)
+Object with ID 12 is not a node or reg output.
+Error: Extracting sequential window has failed.
+Error: phyopt: local optimization failed at round 1 part 1. Rolling back.
+phyopt: round=1 part=high seed=n13(id=13 center=13 R=6 crit=1.000 pot=0.2000)
+Object with ID 13 is not a node or reg output.
+Error: Extracting sequential window has failed.
+Error: phyopt: local optimization failed at round 1 part 1. Rolling back.
+phyopt: round=1 part=high seed=n9(id=9 center=9 R=6 crit=1.000 pot=0.0000)
+phyopt: accepted (map area 5.05->5.05, delay 2.00->2.00).
+phyopt: finished round 1/1.
+phyopt: partition summary (tried/accepted):
+  high : 2 / 4
+  low  : 0 / 0
+  mid  : 0 / 0
+phyopt: per-part seed coverage (topK means top-5 potential within processed seeds):
+  high: seeds=5 tried=4(80.0%) accepted=2(50.0%) skipped(marked=1,low_slack=0) topK(tried=4/5 accepted=2 hit=50.0%)
+  low: seeds=1 tried=0(0.0%) accepted=0(0.0%) skipped(marked=1,low_slack=0) topK(tried=0/1 accepted=0 hit=0.0%)
+  mid: seeds=0 tried=0(0.0%) accepted=0(0.0%) skipped(marked=0,low_slack=0) topK(tried=0/0 accepted=0 hit=0.0%)
+phyopt: rejection reason breakdown:
+  - runtime_or_eval_fail : 2
+  - policy_tradeoff_reject : 0
+  - delay_worse : 0
+  - area_worse : 0
+  - area_and_delay_worse : 0
+  - low_part_delay_budget : 0
+phyopt: skipped marked=2 low_slack=<0.10=0
+phyopt: done, accepted=2 rejected=2 final_nodes=6 final_levels=3.
+Networks are equivalent after structural hashing.  Time =     0.00 sec

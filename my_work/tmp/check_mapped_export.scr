@@ -1,0 +1,10 @@
+read_liberty my_work/c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger iwls26/results/ex205_017.aig
+map_oto
+mapper_extract -o my_work/tmp/ex205_017_nodes.csv
+phyread -i 0.50 -p 0.40 -f 0.05 -g 0.05 my_work/tmp/ex205_017_nodes.csv
+phyopt -d -n 1 -k 40 -L 0.25 -H 0.90
+map
+ps
+write_blif my_work/tmp/ex205_017_after_mapped.blif
+quit

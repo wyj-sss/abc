@@ -1,0 +1,73 @@
+======== ABC command line "source /tmp/ex207_optimized_291.scr"
+Library "NangateOpenCellLibrary" from "/mnt/d/My_abc_work/abc/my_work/c17_work/NangateOpenCellLibrary_typical.lib" has 90 cells (45 skipped: 21 seq; 6 tri-state; 8 no func; 10 dont_use; 0 with 2 outputs; 0 with 3+ outputs).  Time =     0.09 sec
+Warning: Detected 2 multi-output cells (for example, "FA_X1").
+mapper_extract: wrote 166273 lines to "/mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex207/ex207_phy.csv".
+Loaded 166273 physical records from /mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex207/ex207_phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7527 avg_slack=0.3372 avg_opt=0.5048
+Physical records : 166273
+Gate summary     : NAND=127903 AND=33532 INV=4838 OTHER=0
+Alpha (L/M/H)    : 0.300 / 0.500 / 0.800
+StructW(i/p/f/g) : 0.500 / 0.400 / 0.050 / 0.050
+phyopt: start rounds=3, criticality partitions high(>=0.900)->low(<=0.250)->mid, window=16, mode=dynamic.
+phyopt: objective=delay-non-regression + area minimization (delay_eps=0.001 rel_tol=0 area_eps=0.001 delay_only=off).
+phyopt: dynamic scheduler enabled (init=15%, leader=5%, probe=1%, part-stop=10, global-stop=2, L2=on, L2-topk-init=12, L2-topk-step=3).
+phyopt: funnel L0=on(keep=78%) L1=on(init=0.220 target=0.48 warmup=12 min_try=14).
+phyopt: seq-template adaptive=on warmup_per_part=6 (templates=3).
+phyopt: anneal=on(start=1.00 min=0.60 decay=0.850 keep_boost=20 l1_slack=0.200).
+phyopt: case timeout enabled (300 sec).
+phyopt: micro-model on (loaded=yes, samples=4620, blendL0=0.50, blendL1=0.35, keep_target=26% [32%,92%]).
+phyopt: round=1 partition sizes high=34875 low=1348 mid=130050.
+phyopt: part=high seed=n13830(id=13830 center=13830 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92754.95->93195.01, delay 821.85->821.85).
+phyopt: part=high seed=n57068(id=57068 center=57068 R=5 tpl=1 crit=0.904 pot=0.2769)
+phyopt: accepted (map area 92754.95->92754.41, delay 821.85->821.85).
+phyopt: part=high seed=n57958(id=57958 center=57958 R=5 tpl=2 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92754.41->92991.02, delay 821.85->821.85).
+phyopt: part=high seed=n58141(id=58141 center=58141 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: accepted (map area 92754.41->92753.89, delay 821.85->821.85).
+phyopt: part=high seed=n58999(id=58999 center=58999 R=5 tpl=1 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92753.89->92755.48, delay 821.85->821.85).
+phyopt: part=high seed=n68269(id=68269 center=68269 R=5 tpl=2 crit=0.904 pot=0.2769)
+phyopt: accepted (map area 92753.89->92752.57, delay 821.85->821.85).
+phyopt: part=high seed=n77744(id=77744 center=77744 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92752.57->92957.96, delay 821.85->821.85).
+phyopt: part=high seed=n87301(id=87301 center=87301 R=5 tpl=2 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92752.57->92753.37, delay 821.85->821.85).
+phyopt: part=high seed=n87360(id=87360 center=87360 R=5 tpl=1 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92752.57->92960.18, delay 821.85->821.85).
+phyopt: part=high seed=n87612(id=87612 center=87612 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: accepted (map area 92752.57->92752.30, delay 821.85->821.85).
+phyopt: part=high seed=n87972(id=87972 center=87972 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: rejected (map area 92752.30->92801.75, delay 821.85->821.85).
+phyopt: part=high seed=n88026(id=88026 center=88026 R=5 tpl=0 crit=0.904 pot=0.2769)
+phyopt: accepted (map area 92752.30->92752.06, delay 821.85->821.85).
+phyopt: part=low seed=n18544(id=18544 center=18544 R=3 tpl=0 crit=0.250 pot=0.9250)
+phyopt: rejected (map area 92752.06->92752.06, delay 821.85->821.85).
+phyopt: L2 skips high=5116 low=0 mid=0.
+phyopt: L0/L1 skips high=104/0 low=0/0 mid=0/0, L1-threshold=0.2238, anneal_temp=1.000.
+phyopt: adaptive keep high/low/mid=85%/78%/78%.
+phyopt: finished round 1/3.
+phyopt: case timeout reached, stop after current accepted network.
+phyopt: partition summary (tried/accepted):
+  high : 5 / 12
+  low  : 0 / 1
+  mid  : 0 / 0
+phyopt: per-part seed coverage (topK means top-5 potential within processed seeds):
+  high: seeds=34875 tried=12(0.0%) accepted=5(41.7%) skipped(marked=0,low_slack=0) topK(tried=5/5 accepted=2 hit=40.0%)
+  low: seeds=1348 tried=1(0.1%) accepted=0(0.0%) skipped(marked=0,low_slack=0) topK(tried=0/5 accepted=0 hit=0.0%)
+  mid: seeds=0 tried=0(0.0%) accepted=0(0.0%) skipped(marked=0,low_slack=0) topK(tried=0/0 accepted=0 hit=0.0%)
+phyopt: sequence template stats by partition (template_id: accepted/tried):
+  high: t0=3/6 t1=1/3 t2=1/3
+  low: t0=0/1 t1=0/0 t2=0/0
+  mid: t0=0/0 t1=0/0 t2=0/0
+phyopt: rejection reason breakdown:
+  - runtime_or_eval_fail : 0
+  - policy_tradeoff_reject : 1
+  - delay_worse : 0
+  - area_worse : 7
+  - area_and_delay_worse : 0
+  - delay_guard_violation : 0
+phyopt: skipped marked=0 low_slack=<0.10=0
+phyopt: done, accepted=5 rejected=8 final_nodes=161426 final_levels=59.
+phyopt: micro-model saved (/mnt/d/My_abc_work/abc/my_work/model/phy_micro_model_global.txt, samples=4633).
+[1;37mIWLS2026/aig_files/ex207      :[0m i/o =   16/   16  lat =    0  nd = 91380  edge = 256430  area =92752.06  delay =821.85  lev = 29

@@ -1,0 +1,165 @@
+======== ABC command line "source /tmp/ablation_ex201_alpha_slack_heavy_285.scr"
+Warning: Detected 2 multi-output cells (for example, "FA_X1").
+mapper_extract: wrote 8619 lines to "/mnt/d/My_abc_work/abc/my_work/ablation_results/ex201/ex201_alpha_slack_heavy.csv".
+Loaded 8619 physical records from /mnt/d/My_abc_work/abc/my_work/ablation_results/ex201/ex201_alpha_slack_heavy.csv
+Potential rebuilt: alpha(low/mid/high)=0.500/0.700/0.900 avg_struct=0.7115 avg_slack=0.1989 avg_opt_mid=0.3527
+Physical records : 8619
+Gate summary     : NAND=5230 AND=3014 INV=374 OTHER=1
+Alpha (L/M/H)    : 0.500 / 0.700 / 0.900
+StructW(i/p/f/g) : 0.400 / 0.300 / 0.200 / 0.100
+phyopt: start rounds=1, criticality partitions high(>=0.800)->low(<=0.300)->mid, window=16.
+phyopt: objective=map(area,delay), low-part delay budget=+10% from pre-opt.
+phyopt: round=1 partition sizes high=4565 low=21 mid=4033.
+phyopt: round=1 part=high seed=n1350(id=1350 center=1350 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4540.35->4540.35, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n1836(id=1836 center=1836 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4540.35->4540.35, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n2029(id=2029 center=2029 R=5 crit=0.828 pot=0.2552)
+phyopt: rejected (map area 4540.35->4541.15, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n2498(id=2498 center=2498 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4540.35->4538.23, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n2566(id=2566 center=2566 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4538.23->4537.96, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n5477(id=5477 center=5477 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4537.96->4537.16, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n5835(id=5835 center=5835 R=5 crit=0.828 pot=0.2552)
+phyopt: rejected (map area 4537.16->4537.43, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n6004(id=6004 center=6004 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4537.16->4536.90, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n6660(id=6660 center=6660 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4536.90->4536.36, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n6780(id=6780 center=6780 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4536.36->4528.92, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n7967(id=7967 center=7967 R=5 crit=0.828 pot=0.2552)
+phyopt: accepted (map area 4528.92->4528.65, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n8247(id=8247 center=8247 R=5 crit=0.828 pot=0.2552)
+Object with ID 8247 is not a node or reg output.
+Error: Extracting sequential window has failed.
+Error: phyopt: local optimization failed at round 1 part 1. Rolling back.
+The node "n8397" with ID 8397 is not in the current network.
+phyopt: skip seed=n8397 (cannot resolve center node in current AIG).
+The node "n8399" with ID 8399 is not in the current network.
+phyopt: skip seed=n8399 (cannot resolve center node in current AIG).
+phyopt: round=1 part=high seed=n518(id=518 center=518 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4528.65->4524.93, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n569(id=569 center=569 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4524.93->4528.65, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n575(id=575 center=575 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4524.93->4532.37, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n576(id=576 center=576 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4524.93->4505.24, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n580(id=580 center=580 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4505.24->4505.24, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n582(id=582 center=582 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4505.24->4506.84, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n583(id=583 center=583 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4505.24->4502.32, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n654(id=654 center=654 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4502.32->4503.11, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n655(id=655 center=655 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4502.32->4499.92, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n657(id=657 center=657 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4499.92->4500.99, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n659(id=659 center=659 R=5 crit=0.828 pot=0.2304)
+phyopt: rejected (map area 4499.92->4503.38, delay 15.00->15.00).
+phyopt: round=1 part=high seed=n664(id=664 center=664 R=5 crit=0.828 pot=0.2304)
+phyopt: accepted (map area 4499.92->4495.67, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3700(id=3700 center=3700 R=3 crit=0.138 pot=0.9310)
+phyopt: rejected (map area 4495.67->4495.67, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3697(id=3697 center=3697 R=3 crit=0.172 pot=0.9138)
+phyopt: accepted (map area 4495.67->4495.40, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3346(id=3346 center=3346 R=3 crit=0.000 pot=0.8761)
+phyopt: accepted (map area 4495.40->4494.60, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3347(id=3347 center=3347 R=3 crit=0.000 pot=0.8761)
+phyopt: accepted (map area 4494.60->4494.07, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3701(id=3701 center=3701 R=3 crit=0.172 pot=0.7899)
+phyopt: rejected (map area 4494.07->4494.07, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3702(id=3702 center=3702 R=3 crit=0.172 pot=0.7899)
+phyopt: rejected (map area 4494.07->4494.07, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n1269(id=1269 center=1269 R=3 crit=0.241 pot=0.7554)
+phyopt: accepted (map area 4494.07->4491.94, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3368(id=3368 center=3368 R=3 crit=0.241 pot=0.7554)
+phyopt: rejected (map area 4491.94->4491.94, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3369(id=3369 center=3369 R=3 crit=0.241 pot=0.7554)
+phyopt: rejected (map area 4491.94->4491.94, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3523(id=3523 center=3523 R=3 crit=0.241 pot=0.7554)
+phyopt: accepted (map area 4491.94->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n1272(id=1272 center=1272 R=3 crit=0.276 pot=0.7382)
+phyopt: rejected (map area 4491.68->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n1273(id=1273 center=1273 R=3 crit=0.276 pot=0.7382)
+phyopt: rejected (map area 4491.68->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n2106(id=2106 center=2106 R=3 crit=0.276 pot=0.7382)
+phyopt: rejected (map area 4491.68->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3693(id=3693 center=3693 R=3 crit=0.276 pot=0.7382)
+phyopt: rejected (map area 4491.68->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n3694(id=3694 center=3694 R=3 crit=0.276 pot=0.7382)
+phyopt: accepted (map area 4491.68->4491.14, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n4050(id=4050 center=4050 R=3 crit=0.276 pot=0.7382)
+phyopt: rejected (map area 4491.14->4491.14, delay 15.00->15.00).
+phyopt: round=1 part=low seed=n4051(id=4051 center=4051 R=3 crit=0.276 pot=0.7382)
+phyopt: accepted (map area 4491.14->4490.08, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n83(id=83 center=83 R=4 crit=0.379 pot=0.7345)
+phyopt: rejected (map area 4490.08->4491.14, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3481(id=3481 center=3481 R=4 crit=0.379 pot=0.7345)
+phyopt: rejected (map area 4490.08->4491.41, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3835(id=3835 center=3835 R=4 crit=0.379 pot=0.7345)
+phyopt: rejected (map area 4490.08->4491.68, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n1455(id=1455 center=1455 R=4 crit=0.310 pot=0.7084)
+phyopt: rejected (map area 4490.08->4490.35, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n2107(id=2107 center=2107 R=4 crit=0.310 pot=0.7084)
+phyopt: accepted (map area 4490.08->4489.81, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3863(id=3863 center=3863 R=4 crit=0.310 pot=0.7084)
+phyopt: accepted (map area 4489.81->4487.69, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n4049(id=4049 center=4049 R=4 crit=0.310 pot=0.7084)
+phyopt: rejected (map area 4487.69->4488.48, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3512(id=3512 center=3512 R=4 crit=0.448 pot=0.6862)
+phyopt: rejected (map area 4487.69->4489.55, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n4816(id=4816 center=4816 R=4 crit=0.448 pot=0.6862)
+phyopt: rejected (map area 4487.69->4487.95, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n119(id=119 center=119 R=4 crit=0.345 pot=0.6843)
+phyopt: accepted (map area 4487.69->4486.36, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n1456(id=1456 center=1456 R=4 crit=0.345 pot=0.6843)
+phyopt: accepted (map area 4486.36->4485.56, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3408(id=3408 center=3408 R=4 crit=0.345 pot=0.6843)
+phyopt: rejected (map area 4485.56->4486.89, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n4211(id=4211 center=4211 R=4 crit=0.345 pot=0.6843)
+phyopt: rejected (map area 4485.56->4485.56, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n4212(id=4212 center=4212 R=4 crit=0.345 pot=0.6843)
+phyopt: rejected (map area 4485.56->4485.56, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n6053(id=6053 center=6053 R=4 crit=0.345 pot=0.6843)
+phyopt: rejected (map area 4485.56->4485.56, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n6054(id=6054 center=6054 R=4 crit=0.345 pot=0.6843)
+phyopt: rejected (map area 4485.56->4485.56, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n6055(id=6055 center=6055 R=4 crit=0.345 pot=0.6843)
+phyopt: accepted (map area 4485.56->4484.76, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n249(id=249 center=249 R=4 crit=0.483 pot=0.6621)
+phyopt: rejected (map area 4484.76->4485.29, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3715(id=3715 center=3715 R=4 crit=0.483 pot=0.6621)
+phyopt: accepted (map area 4484.76->4484.23, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n5741(id=5741 center=5741 R=4 crit=0.483 pot=0.6621)
+phyopt: rejected (map area 4484.23->4484.23, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n80(id=80 center=80 R=4 crit=0.379 pot=0.6602)
+phyopt: accepted (map area 4484.23->4483.16, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n127(id=127 center=127 R=4 crit=0.379 pot=0.6602)
+phyopt: accepted (map area 4483.16->4481.04, delay 15.00->15.00).
+phyopt: round=1 part=mid seed=n3403(id=3403 center=3403 R=4 crit=0.379 pot=0.6602)
+phyopt: accepted (map area 4481.04->4480.24, delay 15.00->15.00).
+phyopt: finished round 1/1.
+phyopt: partition summary (tried/accepted):
+  high : 15 / 24
+  low  : 7 / 17
+  mid  : 9 / 23
+phyopt: per-part seed coverage (topK means top-5 potential within processed seeds):
+  high: seeds=30 tried=24(80.0%) accepted=15(62.5%) skipped(marked=4,low_slack=0) topK(tried=5/5 accepted=4 hit=80.0%)
+  low: seeds=21 tried=17(81.0%) accepted=7(41.2%) skipped(marked=4,low_slack=0) topK(tried=4/5 accepted=3 hit=75.0%)
+  mid: seeds=30 tried=23(76.7%) accepted=9(39.1%) skipped(marked=7,low_slack=0) topK(tried=5/5 accepted=1 hit=20.0%)
+phyopt: rejection reason breakdown:
+  - runtime_or_eval_fail : 3
+  - policy_tradeoff_reject : 15
+  - delay_worse : 0
+  - area_worse : 17
+  - area_and_delay_worse : 0
+  - low_part_delay_budget : 0
+phyopt: skipped marked=15 low_slack=<0.10=0
+phyopt: done, accepted=31 rejected=35 final_nodes=8092 final_levels=32.
+Networks are equivalent.  Time =     0.90 sec

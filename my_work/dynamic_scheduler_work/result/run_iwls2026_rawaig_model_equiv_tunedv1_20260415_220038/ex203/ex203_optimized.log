@@ -1,0 +1,264 @@
+======== ABC command line "source /tmp/ex203_optimized_291.scr"
+Library "NangateOpenCellLibrary" from "/mnt/d/My_abc_work/abc/my_work/c17_work/NangateOpenCellLibrary_typical.lib" has 90 cells (45 skipped: 21 seq; 6 tri-state; 8 no func; 10 dont_use; 0 with 2 outputs; 0 with 3+ outputs).  Time =     0.13 sec
+Warning: Detected 2 multi-output cells (for example, "FA_X1").
+mapper_extract: wrote 28960 lines to "/mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv".
+Loaded 28960 physical records from /mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7495 avg_slack=0.2476 avg_opt=0.4691
+Physical records : 28960
+Gate summary     : NAND=20525 AND=7223 INV=1212 OTHER=0
+Alpha (L/M/H)    : 0.300 / 0.500 / 0.800
+StructW(i/p/f/g) : 0.500 / 0.400 / 0.050 / 0.050
+phyopt: start rounds=3, criticality partitions high(>=0.900)->low(<=0.250)->mid, window=16, mode=dynamic.
+phyopt: objective=delay-non-regression + area minimization (delay_eps=0.001 rel_tol=0 area_eps=0.001 delay_only=off).
+phyopt: dynamic scheduler enabled (init=15%, leader=5%, probe=1%, part-stop=10, global-stop=2, L2=on, L2-topk-init=12, L2-topk-step=3).
+phyopt: funnel L0=on(keep=78%) L1=on(init=0.220 target=0.48 warmup=12 min_try=14).
+phyopt: seq-template adaptive=on warmup_per_part=6 (templates=3).
+phyopt: anneal=on(start=1.00 min=0.60 decay=0.850 keep_boost=20 l1_slack=0.200).
+phyopt: case timeout enabled (300 sec).
+phyopt: micro-model on (loaded=yes, samples=4272, blendL0=0.50, blendL1=0.35, keep_target=26% [32%,92%]).
+phyopt: round=1 partition sizes high=4457 low=52 mid=24451.
+phyopt: part=high seed=n4963(id=4963 center=4963 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15776.94->15775.60, delay 634.33->634.33).
+phyopt: part=high seed=n5015(id=5015 center=5015 R=5 tpl=1 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15775.60->15769.25, delay 634.33->634.33).
+phyopt: part=high seed=n5182(id=5182 center=5182 R=5 tpl=2 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15769.25->15767.14, delay 634.33->634.33).
+phyopt: part=high seed=n13417(id=13417 center=13417 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15767.14->15765.27, delay 634.33->634.33).
+phyopt: part=high seed=n20056(id=20056 center=20056 R=5 tpl=1 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15765.27->15763.69, delay 634.33->634.33).
+phyopt: part=high seed=n23336(id=23336 center=23336 R=5 tpl=2 crit=0.921 pot=0.2632)
+phyopt: rejected (map area 15763.69->15770.60, delay 634.33->634.33).
+phyopt: part=high seed=n23749(id=23749 center=23749 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15763.69->15762.94, delay 634.33->634.33).
+phyopt: part=high seed=n23824(id=23824 center=23824 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15762.94->15761.12, delay 634.33->634.33).
+phyopt: part=high seed=n23849(id=23849 center=23849 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15761.12->15760.26, delay 634.33->634.33).
+phyopt: part=high seed=n24039(id=24039 center=24039 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15760.26->15758.41, delay 634.33->634.33).
+The node "n27872" with ID 27872 is not in the current network.
+phyopt: skip seed=n27872 (cannot resolve center node in current AIG).
+phyopt: part=high seed=n27173(id=27173 center=27173 R=5 tpl=0 crit=0.947 pot=0.2421)
+phyopt: rejected (map area 15758.41->15758.41, delay 634.33->634.33).
+phyopt: part=low seed=n793(id=793 center=793 R=3 tpl=0 crit=0.211 pot=0.9368)
+phyopt: rejected (map area 15758.41->15758.41, delay 634.33->634.33).
+phyopt: part=low seed=n677(id=677 center=677 R=3 tpl=1 crit=0.158 pot=0.8031)
+phyopt: rejected (map area 15758.41->15761.57, delay 634.33->634.33).
+phyopt: part=low seed=n682(id=682 center=682 R=3 tpl=2 crit=0.132 pot=0.8110)
+phyopt: rejected (map area 15758.41->15758.42, delay 634.33->634.33).
+phyopt: part=low seed=n9042(id=9042 center=9042 R=3 tpl=0 crit=0.132 pot=0.8110)
+phyopt: rejected (map area 15758.41->15758.95, delay 634.33->634.33).
+phyopt: part=low seed=n9037(id=9037 center=9037 R=3 tpl=1 crit=0.105 pot=0.8189)
+phyopt: accepted (map area 15758.41->15758.14, delay 634.33->634.33).
+phyopt: part=low seed=n36(id=36 center=36 R=3 tpl=2 crit=0.000 pot=0.8504)
+phyopt: accepted (map area 15758.14->15757.88, delay 634.33->634.33).
+phyopt: part=low seed=n40(id=40 center=40 R=3 tpl=1 crit=0.000 pot=0.8504)
+phyopt: accepted (map area 15757.88->15757.09, delay 634.33->634.33).
+phyopt: part=mid seed=n582(id=582 center=582 R=4 tpl=0 crit=0.263 pot=0.8684)
+phyopt: accepted (map area 15757.09->15756.83, delay 634.33->634.33).
+phyopt: part=mid seed=n917(id=917 center=917 R=4 tpl=1 crit=0.263 pot=0.8684)
+phyopt: rejected (map area 15756.83->15756.83, delay 634.33->634.33).
+phyopt: part=mid seed=n2896(id=2896 center=2896 R=4 tpl=2 crit=0.263 pot=0.8684)
+phyopt: accepted (map area 15756.83->15756.57, delay 634.33->634.33).
+phyopt: part=mid seed=n2443(id=2443 center=2443 R=4 tpl=0 crit=0.289 pot=0.8553)
+phyopt: rejected (map area 15756.57->15756.57, delay 634.33->634.33).
+phyopt: part=mid seed=n541(id=541 center=541 R=4 tpl=1 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15756.57->15756.58, delay 634.33->634.33).
+phyopt: part=mid seed=n870(id=870 center=870 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15756.57->15756.83, delay 634.33->634.33).
+phyopt: part=mid seed=n951(id=951 center=951 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15756.57->15755.76, delay 634.33->634.33).
+phyopt: part=mid seed=n2372(id=2372 center=2372 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15755.76->15754.43, delay 634.33->634.33).
+phyopt: part=mid seed=n128(id=128 center=128 R=4 tpl=2 crit=0.342 pot=0.8289)
+phyopt: accepted (map area 15754.43->15753.90, delay 634.33->634.33).
+phyopt: part=mid seed=n902(id=902 center=902 R=4 tpl=2 crit=0.342 pot=0.8289)
+phyopt: accepted (map area 15753.90->15753.63, delay 634.33->634.33).
+phyopt: part=mid seed=n371(id=371 center=371 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: accepted (map area 15753.63->15752.60, delay 634.33->634.33).
+phyopt: part=mid seed=n604(id=604 center=604 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: accepted (map area 15752.60->15752.34, delay 634.33->634.33).
+phyopt: part=low seed=n683(id=683 center=683 R=3 tpl=1 crit=0.158 pot=0.8031)
+phyopt: rejected (map area 15752.34->15752.34, delay 634.33->634.33).
+phyopt: part=low seed=n9033(id=9033 center=9033 R=3 tpl=1 crit=0.158 pot=0.8031)
+phyopt: rejected (map area 15752.34->15752.34, delay 634.33->634.33).
+phyopt: part=low seed=n9034(id=9034 center=9034 R=3 tpl=2 crit=0.158 pot=0.8031)
+phyopt: rejected (map area 15752.34->15752.34, delay 634.33->634.33).
+phyopt: L2 skips high=644 low=0 mid=3583.
+phyopt: L0/L1 skips high=13/0 low=0/0 mid=73/0, L1-threshold=0.2204, anneal_temp=1.000.
+phyopt: adaptive keep high/low/mid=85%/64%/85%.
+phyopt: finished round 1/3.
+mapper_extract: wrote 28851 lines to "/mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv".
+Loaded 28851 physical records from /mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7478 avg_slack=0.2512 avg_opt=0.4708
+phyopt: round=2 partition sizes high=4378 low=60 mid=24413.
+phyopt: part=high seed=n4961(id=4961 center=4961 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15751.31->15749.98, delay 634.33->634.33).
+phyopt: part=high seed=n5013(id=5013 center=5013 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: rejected (map area 15749.98->15751.21, delay 634.33->634.33).
+phyopt: part=high seed=n5177(id=5177 center=5177 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15749.98->15748.64, delay 634.33->634.33).
+phyopt: part=high seed=n13314(id=13314 center=13314 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15748.64->15745.68, delay 634.33->634.33).
+phyopt: part=high seed=n20020(id=20020 center=20020 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15745.68->15743.83, delay 634.33->634.33).
+phyopt: part=high seed=n22013(id=22013 center=22013 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15743.83->15743.57, delay 634.33->634.33).
+phyopt: part=high seed=n22683(id=22683 center=22683 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15743.57->15742.77, delay 634.33->634.33).
+phyopt: part=high seed=n23279(id=23279 center=23279 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15742.77->15742.47, delay 634.33->634.33).
+phyopt: part=high seed=n23689(id=23689 center=23689 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: rejected (map area 15742.47->15742.74, delay 634.33->634.33).
+phyopt: part=high seed=n23762(id=23762 center=23762 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15742.47->15739.26, delay 634.33->634.33).
+phyopt: part=high seed=n23787(id=23787 center=23787 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15739.26->15721.98, delay 634.33->634.33).
+phyopt: part=high seed=n23975(id=23975 center=23975 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15721.98->15721.19, delay 634.33->634.33).
+phyopt: part=low seed=n2903(id=2903 center=2903 R=3 tpl=1 crit=0.237 pot=0.9289)
+phyopt: rejected (map area 15721.19->15721.19, delay 634.33->634.33).
+phyopt: part=low seed=n169(id=169 center=169 R=3 tpl=1 crit=0.132 pot=0.9605)
+phyopt: rejected (map area 15721.19->15722.27, delay 634.33->634.33).
+phyopt: part=low seed=n676(id=676 center=676 R=3 tpl=2 crit=0.158 pot=0.8032)
+phyopt: rejected (map area 15721.19->15721.19, delay 634.33->634.33).
+phyopt: part=low seed=n681(id=681 center=681 R=3 tpl=1 crit=0.132 pot=0.8111)
+phyopt: rejected (map area 15721.19->15721.19, delay 634.33->634.33).
+phyopt: part=low seed=n9032(id=9032 center=9032 R=3 tpl=1 crit=0.132 pot=0.8111)
+phyopt: rejected (map area 15721.19->15721.19, delay 634.33->634.33).
+phyopt: part=low seed=n9027(id=9027 center=9027 R=3 tpl=2 crit=0.105 pot=0.8190)
+phyopt: rejected (map area 15721.19->15721.19, delay 634.33->634.33).
+phyopt: part=mid seed=n472(id=472 center=472 R=4 tpl=2 crit=0.263 pot=0.8684)
+phyopt: accepted (map area 15721.19->15720.72, delay 634.33->634.33).
+phyopt: part=mid seed=n923(id=923 center=923 R=4 tpl=2 crit=0.263 pot=0.8684)
+phyopt: accepted (map area 15720.72->15720.45, delay 634.33->634.33).
+phyopt: part=mid seed=n2454(id=2454 center=2454 R=4 tpl=2 crit=0.289 pot=0.8553)
+phyopt: accepted (map area 15720.45->15719.67, delay 634.33->634.33).
+phyopt: part=mid seed=n540(id=540 center=540 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15719.67->15719.42, delay 634.33->634.33).
+phyopt: part=mid seed=n876(id=876 center=876 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15719.42->15719.36, delay 634.33->634.33).
+phyopt: part=mid seed=n959(id=959 center=959 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15719.36->15719.61, delay 634.33->634.33).
+phyopt: part=mid seed=n2386(id=2386 center=2386 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15719.36->15718.84, delay 634.33->634.33).
+phyopt: part=mid seed=n908(id=908 center=908 R=4 tpl=2 crit=0.342 pot=0.8289)
+phyopt: accepted (map area 15718.84->15718.57, delay 634.33->634.33).
+phyopt: part=mid seed=n8716(id=8716 center=8716 R=4 tpl=2 crit=0.342 pot=0.8289)
+phyopt: accepted (map area 15718.57->15717.77, delay 634.33->634.33).
+phyopt: part=mid seed=n356(id=356 center=356 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: accepted (map area 15717.77->15717.75, delay 634.33->634.33).
+phyopt: part=high seed=n23524(id=23524 center=23524 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: accepted (map area 15717.75->15715.87, delay 634.33->634.33).
+phyopt: part=high seed=n23527(id=23527 center=23527 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: accepted (map area 15715.87->15714.84, delay 634.33->634.33).
+phyopt: part=high seed=n23534(id=23534 center=23534 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: rejected (map area 15714.84->15714.84, delay 634.33->634.33).
+phyopt: part=high seed=n23537(id=23537 center=23537 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: rejected (map area 15714.84->15717.00, delay 634.33->634.33).
+phyopt: part=low seed=n682(id=682 center=682 R=3 tpl=1 crit=0.158 pot=0.8032)
+phyopt: rejected (map area 15714.84->15714.84, delay 634.33->634.33).
+phyopt: part=low seed=n9023(id=9023 center=9023 R=3 tpl=1 crit=0.158 pot=0.8032)
+phyopt: rejected (map area 15714.84->15714.84, delay 634.33->634.33).
+phyopt: L2 skips high=586 low=0 mid=3321.
+phyopt: L0/L1 skips high=63/428 low=0/0 mid=329/0, L1-threshold=0.2588, anneal_temp=0.850.
+phyopt: adaptive keep high/low/mid=92%/57%/85%.
+phyopt: finished round 2/3.
+mapper_extract: wrote 28753 lines to "/mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv".
+Loaded 28753 physical records from /mnt/d/My_abc_work/abc/my_work/dynamic_scheduler_work/result/run_iwls2026_rawaig_model_equiv_tunedv1_20260415_220038/ex203/ex203_phy.csv
+Potential rebuilt: alpha(low/mid/high)=0.300/0.500/0.800 avg_struct=0.7470 avg_slack=0.2537 avg_opt=0.4716
+phyopt: round=3 partition sizes high=4362 low=59 mid=24332.
+phyopt: part=high seed=n3571(id=3571 center=3571 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15716.13->15714.02, delay 634.33->634.33).
+phyopt: part=high seed=n3622(id=3622 center=3622 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15714.02->15703.47, delay 634.33->634.33).
+phyopt: part=high seed=n3792(id=3792 center=3792 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15703.47->15698.87, delay 634.33->634.33).
+phyopt: part=high seed=n9177(id=9177 center=9177 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: rejected (map area 15698.87->15698.87, delay 634.33->634.33).
+phyopt: part=high seed=n13302(id=13302 center=13302 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15698.87->15698.34, delay 634.33->634.33).
+phyopt: part=high seed=n19978(id=19978 center=19978 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15698.34->15698.07, delay 634.33->634.33).
+phyopt: part=high seed=n20672(id=20672 center=20672 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15698.07->15697.25, delay 634.33->634.33).
+phyopt: part=high seed=n21994(id=21994 center=21994 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15697.25->15695.65, delay 634.33->634.33).
+phyopt: part=high seed=n22631(id=22631 center=22631 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15695.65->15689.11, delay 634.33->634.33).
+phyopt: part=high seed=n23222(id=23222 center=23222 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15689.11->15688.58, delay 634.33->634.33).
+phyopt: part=high seed=n23430(id=23430 center=23430 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15688.58->15685.88, delay 634.33->634.33).
+phyopt: part=high seed=n23633(id=23633 center=23633 R=5 tpl=0 crit=0.921 pot=0.2632)
+phyopt: accepted (map area 15685.88->15685.61, delay 634.33->634.33).
+phyopt: part=low seed=n480(id=480 center=480 R=3 tpl=2 crit=0.237 pot=0.9289)
+phyopt: rejected (map area 15685.61->15685.61, delay 634.33->634.33).
+phyopt: part=low seed=n1320(id=1320 center=1320 R=3 tpl=1 crit=0.237 pot=0.9289)
+phyopt: rejected (map area 15685.61->15685.61, delay 634.33->634.33).
+phyopt: part=low seed=n636(id=636 center=636 R=3 tpl=1 crit=0.211 pot=0.9368)
+phyopt: rejected (map area 15685.61->15685.61, delay 634.33->634.33).
+phyopt: part=low seed=n9020(id=9020 center=9020 R=3 tpl=0 crit=0.158 pot=0.9526)
+phyopt: accepted (map area 15685.61->15684.57, delay 634.33->634.33).
+phyopt: part=low seed=n172(id=172 center=172 R=3 tpl=0 crit=0.132 pot=0.9605)
+phyopt: rejected (map area 15684.57->15685.38, delay 634.33->634.33).
+phyopt: part=low seed=n6506(id=6506 center=6506 R=3 tpl=0 crit=0.132 pot=0.8112)
+phyopt: rejected (map area 15684.57->15685.37, delay 634.33->634.33).
+phyopt: part=mid seed=n6676(id=6676 center=6676 R=4 tpl=2 crit=0.263 pot=0.8684)
+phyopt: rejected (map area 15684.57->15684.57, delay 634.33->634.33).
+phyopt: part=mid seed=n793(id=793 center=793 R=4 tpl=2 crit=0.289 pot=0.8553)
+phyopt: accepted (map area 15684.57->15682.17, delay 634.33->634.33).
+phyopt: part=mid seed=n626(id=626 center=626 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15682.17->15682.17, delay 634.33->634.33).
+phyopt: part=mid seed=n709(id=709 center=709 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: accepted (map area 15682.17->15680.87, delay 634.33->634.33).
+phyopt: part=mid seed=n6640(id=6640 center=6640 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15680.87->15681.91, delay 634.33->634.33).
+phyopt: part=mid seed=n6697(id=6697 center=6697 R=4 tpl=2 crit=0.316 pot=0.8421)
+phyopt: rejected (map area 15680.87->15680.87, delay 634.33->634.33).
+phyopt: part=mid seed=n6664(id=6664 center=6664 R=4 tpl=2 crit=0.342 pot=0.8289)
+phyopt: accepted (map area 15680.87->15680.35, delay 634.33->634.33).
+phyopt: part=mid seed=n362(id=362 center=362 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: accepted (map area 15680.35->15677.95, delay 634.33->634.33).
+phyopt: part=mid seed=n503(id=503 center=503 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: rejected (map area 15677.95->15679.27, delay 634.33->634.33).
+phyopt: part=mid seed=n1652(id=1652 center=1652 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: rejected (map area 15677.95->15678.47, delay 634.33->634.33).
+phyopt: part=mid seed=n5728(id=5728 center=5728 R=4 tpl=2 crit=0.368 pot=0.8158)
+phyopt: accepted (map area 15677.95->15677.44, delay 634.33->634.33).
+phyopt: part=high seed=n23494(id=23494 center=23494 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: rejected (map area 15677.44->15679.00, delay 634.33->634.33).
+phyopt: part=high seed=n23496(id=23496 center=23496 R=5 tpl=0 crit=0.921 pot=0.2205)
+phyopt: rejected (map area 15677.44->15677.44, delay 634.33->634.33).
+phyopt: part=low seed=n9025(id=9025 center=9025 R=3 tpl=0 crit=0.132 pot=0.8112)
+phyopt: rejected (map area 15677.44->15678.49, delay 634.33->634.33).
+phyopt: part=low seed=n6504(id=6504 center=6504 R=3 tpl=1 crit=0.158 pot=0.8033)
+phyopt: rejected (map area 15677.44->15677.44, delay 634.33->634.33).
+phyopt: L2 skips high=539 low=0 mid=3054.
+phyopt: L0/L1 skips high=127/413 low=1/0 mid=584/0, L1-threshold=0.3005, anneal_temp=0.723.
+phyopt: adaptive keep high/low/mid=92%/57%/85%.
+phyopt: finished round 3/3.
+phyopt: partition summary (tried/accepted):
+  high : 32 / 41
+  low  : 4 / 26
+  mid  : 22 / 33
+phyopt: per-part seed coverage (topK means top-5 potential within processed seeds):
+  high: seeds=13197 tried=41(0.3%) accepted=32(78.0%) skipped(marked=2,low_slack=0) topK(tried=15/15 accepted=13 hit=86.7%)
+  low: seeds=171 tried=26(15.2%) accepted=4(15.4%) skipped(marked=6,low_slack=0) topK(tried=11/15 accepted=4 hit=36.4%)
+  mid: seeds=73196 tried=33(0.0%) accepted=22(66.7%) skipped(marked=3,low_slack=0) topK(tried=14/15 accepted=8 hit=57.1%)
+phyopt: sequence template stats by partition (template_id: accepted/tried):
+  high: t0=29/37 t1=2/2 t2=1/2
+  low: t0=1/6 t1=2/14 t2=1/6
+  mid: t0=1/2 t1=0/2 t2=21/29
+phyopt: rejection reason breakdown:
+  - runtime_or_eval_fail : 1
+  - policy_tradeoff_reject : 24
+  - delay_worse : 0
+  - area_worse : 18
+  - area_and_delay_worse : 0
+  - delay_guard_violation : 0
+phyopt: skipped marked=11 low_slack=<0.10=0
+phyopt: done, accepted=58 rejected=43 final_nodes=27289 final_levels=45.
+phyopt: micro-model saved (/mnt/d/My_abc_work/abc/my_work/model/phy_micro_model_global.txt, samples=4372).
+[1;37mIWLS2026/aig_files/ex203      :[0m i/o =   16/   16  lat =    0  nd = 15337  edge =  43355  area =15677.44  delay =634.33  lev = 22

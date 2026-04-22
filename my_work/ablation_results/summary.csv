@@ -1,0 +1,91 @@
+bench,case,status,before_area,before_delay,after_area,after_delay,accepted,rejected,topk_hit_high,topk_hit_low,topk_hit_mid,reject_runtime,reject_delay,reject_area,phyread_args,phyopt_args,log_file
+c17,baseline,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_baseline.log
+c17,no_inv_chain,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_inv_chain.log
+c17,no_pair_collapse,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_pair_collapse.log
+c17,no_fanout_ease,PASS,5.05,2.00,5.05,2.00,2,1,66.7,0.0,0.0,1,0,0,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_fanout_ease.log
+c17,no_gate_score,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_no_gate_score.log
+c17,thresh_tight,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_thresh_tight.log
+c17,thresh_loose,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_thresh_loose.log
+c17,alpha_slack_heavy,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_alpha_slack_heavy.log
+c17,alpha_struct_heavy,PASS,5.05,2.00,5.05,2.00,2,2,50.0,0.0,0.0,2,0,0,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c17/c17_alpha_struct_heavy.log
+c499,baseline,PASS,250.57,9.00,250.04,9.00,11,54,80.0,0.0,33.3,18,0,1,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_baseline.log
+c499,no_inv_chain,PASS,250.57,9.00,250.04,9.00,11,57,80.0,0.0,33.3,18,0,1,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_no_inv_chain.log
+c499,no_pair_collapse,PASS,250.57,9.00,250.04,9.00,11,57,80.0,0.0,33.3,7,0,0,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_no_pair_collapse.log
+c499,no_fanout_ease,PASS,250.57,9.00,250.04,9.00,11,54,80.0,0.0,33.3,18,0,1,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_no_fanout_ease.log
+c499,no_gate_score,PASS,250.57,9.00,250.04,9.00,11,54,80.0,0.0,33.3,18,0,1,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_no_gate_score.log
+c499,thresh_tight,PASS,250.57,9.00,250.57,9.00,10,66,80.0,0.0,0.0,0,0,0,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_thresh_tight.log
+c499,thresh_loose,PASS,250.57,9.00,250.04,9.00,11,54,80.0,0.0,33.3,18,0,1,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_thresh_loose.log
+c499,alpha_slack_heavy,PASS,250.57,9.00,250.04,9.00,11,54,80.0,0.0,33.3,18,0,1,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_alpha_slack_heavy.log
+c499,alpha_struct_heavy,PASS,250.57,9.00,250.04,9.00,11,57,80.0,0.0,33.3,7,0,0,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c499/c499_alpha_struct_heavy.log
+c880,baseline,PASS,210.67,12.00,201.10,12.00,8,56,40.0,0.0,0.0,24,3,26,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_baseline.log
+c880,no_inv_chain,PASS,210.67,12.00,194.18,12.00,13,49,25.0,0.0,0.0,20,4,18,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_no_inv_chain.log
+c880,no_pair_collapse,PASS,210.67,12.00,200.83,12.00,18,50,40.0,0.0,50.0,21,1,19,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_no_pair_collapse.log
+c880,no_fanout_ease,PASS,210.67,12.00,200.30,12.00,13,49,40.0,0.0,0.0,21,4,19,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_no_fanout_ease.log
+c880,no_gate_score,PASS,210.67,12.00,201.10,12.00,7,57,40.0,0.0,0.0,24,4,27,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_no_gate_score.log
+c880,thresh_tight,PASS,210.67,12.00,200.30,12.00,16,48,25.0,0.0,50.0,22,1,23,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_thresh_tight.log
+c880,thresh_loose,PASS,210.67,12.00,201.10,12.00,13,60,60.0,0.0,0.0,35,1,9,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_thresh_loose.log
+c880,alpha_slack_heavy,PASS,210.67,12.00,201.63,12.00,5,56,40.0,0.0,0.0,23,5,24,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_alpha_slack_heavy.log
+c880,alpha_struct_heavy,PASS,210.67,12.00,200.83,12.00,18,50,40.0,0.0,50.0,21,1,19,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c880/c880_alpha_struct_heavy.log
+c1355,baseline,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_baseline.log
+c1355,no_inv_chain,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_no_inv_chain.log
+c1355,no_pair_collapse,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_no_pair_collapse.log
+c1355,no_fanout_ease,PASS,250.57,9.00,250.57,9.00,11,44,20.0,0.0,0.0,2,0,0,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_no_fanout_ease.log
+c1355,no_gate_score,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_no_gate_score.log
+c1355,thresh_tight,PASS,250.57,9.00,250.04,9.00,17,49,60.0,0.0,0.0,0,0,0,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_thresh_tight.log
+c1355,thresh_loose,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_thresh_loose.log
+c1355,alpha_slack_heavy,PASS,250.57,9.00,248.98,9.00,17,49,60.0,0.0,0.0,2,0,2,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_alpha_slack_heavy.log
+c1355,alpha_struct_heavy,PASS,250.57,9.00,248.98,9.00,17,51,60.0,0.0,0.0,2,0,2,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1355/c1355_alpha_struct_heavy.log
+c1908,baseline,PASS,209.08,13.00,183.01,12.00,14,52,100.0,0.0,0.0,18,0,13,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_baseline.log
+c1908,no_inv_chain,PASS,209.08,13.00,179.82,12.00,17,53,80.0,0.0,0.0,18,0,20,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_no_inv_chain.log
+c1908,no_pair_collapse,PASS,209.08,13.00,176.89,11.00,17,64,100.0,33.3,0.0,22,1,26,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_no_pair_collapse.log
+c1908,no_fanout_ease,PASS,209.08,13.00,183.27,12.00,13,56,100.0,0.0,0.0,18,0,22,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_no_fanout_ease.log
+c1908,no_gate_score,PASS,209.08,13.00,183.01,12.00,14,52,100.0,0.0,0.0,19,0,12,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_no_gate_score.log
+c1908,thresh_tight,PASS,209.08,13.00,181.68,11.00,15,56,80.0,0.0,40.0,24,0,19,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_thresh_tight.log
+c1908,thresh_loose,PASS,209.08,13.00,184.07,12.00,11,62,40.0,33.3,0.0,23,1,27,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_thresh_loose.log
+c1908,alpha_slack_heavy,PASS,209.08,13.00,183.01,12.00,14,52,100.0,0.0,0.0,21,0,13,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_alpha_slack_heavy.log
+c1908,alpha_struct_heavy,PASS,209.08,13.00,176.89,11.00,17,64,100.0,33.3,0.0,23,1,26,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c1908/c1908_alpha_struct_heavy.log
+c2670,baseline,PASS,454.59,10.00,419.75,10.00,9,55,0.0,0.0,25.0,38,0,6,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_baseline.log
+c2670,no_inv_chain,PASS,454.59,10.00,417.35,10.00,11,53,50.0,0.0,25.0,36,1,6,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_no_inv_chain.log
+c2670,no_pair_collapse,PASS,454.59,10.00,414.43,10.00,13,51,0.0,0.0,25.0,23,0,16,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_no_pair_collapse.log
+c2670,no_fanout_ease,PASS,454.59,10.00,412.83,10.00,13,51,0.0,0.0,25.0,28,1,12,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_no_fanout_ease.log
+c2670,no_gate_score,PASS,454.59,10.00,419.75,10.00,9,55,0.0,0.0,25.0,38,0,6,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_no_gate_score.log
+c2670,thresh_tight,PASS,454.59,10.00,391.82,10.00,16,44,60.0,25.0,25.0,15,0,24,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_thresh_tight.log
+c2670,thresh_loose,PASS,454.59,10.00,413.10,10.00,11,55,66.7,0.0,0.0,34,0,7,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_thresh_loose.log
+c2670,alpha_slack_heavy,PASS,454.59,10.00,419.75,10.00,9,55,0.0,0.0,25.0,38,0,6,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_alpha_slack_heavy.log
+c2670,alpha_struct_heavy,PASS,454.59,10.00,414.43,10.00,13,51,0.0,0.0,25.0,23,0,17,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c2670/c2670_alpha_struct_heavy.log
+c3540,baseline,PASS,628.56,18.00,585.20,18.00,14,49,20.0,0.0,33.3,16,0,24,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_baseline.log
+c3540,no_inv_chain,PASS,628.56,18.00,597.17,18.00,17,45,60.0,25.0,0.0,16,0,25,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_no_inv_chain.log
+c3540,no_pair_collapse,PASS,628.56,18.00,583.34,18.00,13,55,20.0,0.0,0.0,12,0,34,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_no_pair_collapse.log
+c3540,no_fanout_ease,PASS,628.56,18.00,594.51,18.00,11,55,20.0,25.0,40.0,16,0,32,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_no_fanout_ease.log
+c3540,no_gate_score,PASS,628.56,18.00,585.20,18.00,14,49,20.0,0.0,33.3,16,0,25,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_no_gate_score.log
+c3540,thresh_tight,PASS,628.56,18.00,574.56,18.00,16,43,60.0,50.0,40.0,12,0,27,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_thresh_tight.log
+c3540,thresh_loose,PASS,628.56,18.00,583.60,18.00,13,60,40.0,0.0,60.0,11,1,43,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_thresh_loose.log
+c3540,alpha_slack_heavy,PASS,628.56,18.00,569.24,18.00,17,46,40.0,25.0,0.0,18,0,18,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_alpha_slack_heavy.log
+c3540,alpha_struct_heavy,PASS,628.56,18.00,583.34,18.00,13,55,20.0,0.0,0.0,12,0,34,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c3540/c3540_alpha_struct_heavy.log
+c5315,baseline,PASS,1158.96,18.00,1029.95,18.00,14,68,60.0,0.0,0.0,64,0,4,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_baseline.log
+c5315,no_inv_chain,PASS,1158.96,18.00,1015.32,18.00,11,72,25.0,0.0,0.0,64,0,6,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_no_inv_chain.log
+c5315,no_pair_collapse,PASS,1158.96,18.00,1027.56,18.00,14,76,60.0,0.0,0.0,65,0,6,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_no_pair_collapse.log
+c5315,no_fanout_ease,PASS,1158.96,18.00,1002.29,18.00,10,77,60.0,0.0,0.0,69,0,5,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_no_fanout_ease.log
+c5315,no_gate_score,PASS,1158.96,18.00,1029.95,18.00,14,68,60.0,0.0,0.0,64,0,4,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_no_gate_score.log
+c5315,thresh_tight,PASS,1158.96,18.00,1002.29,18.00,24,61,100.0,0.0,0.0,54,0,5,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_thresh_tight.log
+c5315,thresh_loose,PASS,1158.96,18.00,1037.40,17.00,17,62,100.0,0.0,0.0,56,0,5,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_thresh_loose.log
+c5315,alpha_slack_heavy,PASS,1158.96,18.00,1044.58,18.00,12,71,60.0,0.0,0.0,63,0,3,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_alpha_slack_heavy.log
+c5315,alpha_struct_heavy,PASS,1158.96,18.00,1028.09,18.00,13,77,60.0,0.0,0.0,66,0,6,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c5315/c5315_alpha_struct_heavy.log
+c6288,baseline,PASS,2283.08,45.00,1403.15,45.00,27,59,60.0,50.0,0.0,6,0,23,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_baseline.log
+c6288,no_inv_chain,PASS,2283.08,45.00,1403.15,45.00,27,59,60.0,50.0,0.0,6,0,23,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_no_inv_chain.log
+c6288,no_pair_collapse,PASS,2283.08,45.00,1410.60,45.00,24,63,40.0,0.0,50.0,7,0,26,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_no_pair_collapse.log
+c6288,no_fanout_ease,PASS,2283.08,45.00,1422.04,45.00,13,73,100.0,0.0,40.0,6,0,42,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_no_fanout_ease.log
+c6288,no_gate_score,PASS,2283.08,45.00,1403.15,45.00,27,59,60.0,50.0,0.0,6,0,23,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_no_gate_score.log
+c6288,thresh_tight,PASS,2283.08,45.00,1401.02,45.00,17,61,60.0,0.0,0.0,7,1,24,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_thresh_tight.log
+c6288,thresh_loose,PASS,2283.08,45.00,1400.49,45.00,16,64,40.0,0.0,0.0,5,0,17,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_thresh_loose.log
+c6288,alpha_slack_heavy,PASS,2283.08,45.00,1403.15,45.00,27,59,60.0,50.0,0.0,6,0,23,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_alpha_slack_heavy.log
+c6288,alpha_struct_heavy,PASS,2283.08,45.00,1410.60,45.00,24,63,40.0,0.0,50.0,7,0,26,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c6288/c6288_alpha_struct_heavy.log
+c7552,baseline,PASS,1061.34,13.00,1035.80,13.00,17,66,60.0,0.0,50.0,32,0,20,"","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_baseline.log
+c7552,no_inv_chain,PASS,1061.34,13.00,1039.79,13.00,17,57,50.0,50.0,100.0,30,0,22,"-i 0 -p 0.3 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_no_inv_chain.log
+c7552,no_pair_collapse,PASS,1061.34,13.00,1035.80,13.00,17,66,60.0,0.0,50.0,32,0,20,"-i 0.4 -p 0 -f 0.2 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_no_pair_collapse.log
+c7552,no_fanout_ease,PASS,1061.34,13.00,1035.80,13.00,17,66,60.0,0.0,50.0,32,0,20,"-i 0.4 -p 0.3 -f 0 -g 0.1","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_no_fanout_ease.log
+c7552,no_gate_score,PASS,1061.34,13.00,1035.80,13.00,17,66,60.0,0.0,50.0,32,0,20,"-i 0.4 -p 0.3 -f 0.2 -g 0","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_no_gate_score.log
+c7552,thresh_tight,PASS,1061.34,13.00,1026.76,13.00,12,67,40.0,0.0,0.0,24,5,30,"","-L 0.20 -H 0.90",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_thresh_tight.log
+c7552,thresh_loose,PASS,1061.34,13.00,1033.41,13.00,14,75,60.0,0.0,0.0,38,1,25,"","-L 0.40 -H 0.70",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_thresh_loose.log
+c7552,alpha_slack_heavy,PASS,1061.34,13.00,1036.07,13.00,16,66,60.0,0.0,50.0,35,0,18,"-L 0.50 -M 0.70 -H 0.90","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_alpha_slack_heavy.log
+c7552,alpha_struct_heavy,PASS,1061.34,13.00,1035.80,13.00,17,66,60.0,0.0,50.0,32,0,20,"-L 0.10 -M 0.30 -H 0.50","",/mnt/d/My_abc_work/abc/my_work/ablation_results/c7552/c7552_alpha_struct_heavy.log

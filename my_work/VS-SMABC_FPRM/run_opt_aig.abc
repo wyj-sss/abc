@@ -1,0 +1,53 @@
+!mkdir -p /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc
+!mkdir -p /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt
+!bash /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/preprocess_smabc_opt.sh
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/rd84_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/rd84_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/ex1010_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/ex1010_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/br1_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/br1_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/br2_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/br2_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/misex3_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/misex3_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/table3_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/table3_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/gary_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/gary_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/in0_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/in0_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/table5_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/table5_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/t2_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/t2_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/in2_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/in2_opt.aig
+
+read_verilog /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/smabc_opt_abc/ts10_opt.v
+strash
+write_aiger /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/aig_output_opt/ts10_opt.aig
+
+echo All optimized AIG done!

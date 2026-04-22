@@ -1,0 +1,34 @@
+// SMABC Optimized Netlist (ABC-friendly)
+module in0_opt(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, f);
+input i0;
+input i1;
+input i2;
+input i3;
+input i4;
+input i5;
+input i6;
+input i7;
+input i8;
+input i9;
+input i10;
+input i11;
+input i12;
+input i13;
+input i14;
+output f;
+wire t0;
+wire t1;
+wire t2;
+wire t3;
+wire s0;
+wire s1;
+wire s2;
+assign t0 = ~i0 & ~i1 & ~i2 & ~i3 & ~i4 & ~i5 & ~i6 & ~i7 & ~i8 & ~i9 & ~i10 & ~i11 & ~i12 & ~i13 & ~i14;
+assign t1 = ~i0 & ~i1 & ~i2 & ~i3 & ~i4 & ~i5 & ~i6 & ~i7 & ~i8 & ~i9 & ~i10 & ~i11 & ~i12 & ~i13 & i14;
+assign t2 = ~i0 & ~i1 & ~i2 & ~i3 & ~i4 & ~i5 & ~i6 & ~i7 & ~i8 & ~i9 & ~i10 & ~i11 & ~i12 & i13 & ~i14;
+assign t3 = ~i0 & ~i1 & ~i2 & ~i3 & ~i4 & ~i5 & ~i6 & ~i7 & ~i8 & ~i9 & ~i10 & ~i11 & ~i12 & i13 & i14;
+assign s0 = t0 | t1;
+assign s1 = s0 | t2;
+assign s2 = s1 | t3;
+assign f = s2;
+endmodule

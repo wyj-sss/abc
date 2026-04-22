@@ -1,0 +1,10 @@
+name,status,area,delay,config
+baseline,PASS,5.05,2.00, | 
+no_inv_chain,PASS,5.05,2.00,-i 0 -p 0.3 -f 0.2 -g 0.1 | 
+no_pair_collapse,PASS,5.05,2.00,-i 0.4 -p 0 -f 0.2 -g 0.1 | 
+no_fanout_ease,PASS,5.05,2.00,-i 0.4 -p 0.3 -f 0 -g 0.1 | 
+no_gate_score,PASS,5.05,2.00,-i 0.4 -p 0.3 -f 0.2 -g 0 | 
+thresh_tight,PASS,5.05,2.00, | -L 0.20 -H 0.90
+thresh_loose,PASS,5.05,2.00, | -L 0.40 -H 0.70
+alpha_slack_heavy,PASS,5.05,2.00,-L 0.50 -M 0.70 -H 0.90 | 
+alpha_struct_heavy,PASS,5.05,2.00,-L 0.10 -M 0.30 -H 0.50 | 

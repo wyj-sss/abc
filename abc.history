@@ -194,3 +194,95 @@ phyread -L 0.30 -M 0.55 -H 0.85 c17_work/output.csv
 phywrite
 phyread -L 0.30 -M 0.55 -H 0.85 c499_work/output.csv
 phyread -L 0.30 -M 0.55 -H 0.85 c880_work/output.csv
+read_aiger c17_work/c17.aig
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+print_stats
+read_aiger c17_work/c17_phyopt.aig
+read_aiger c880_work/c880.aig
+map_oto
+mapper_extract
+phywrite
+phyopt
+strash
+strash; rewrite -z; refactor -z; balance; strash
+write_aiger c880_work/c880_opt.aig
+read_aiger c880_work/c880_opt.aig
+source -s abc.rc
+BUILD_JOBS=1 ROUNDS=1 PART_SIZE=25 c17_work/verify_phyopt_local.sh c880"
+read_aiger c880_work/c880.aig
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+map_oto
+mapper_extract
+phyread c880_work/output.csv
+phyopt
+strash
+strash; orchestrate -K 8 -N 2 -z -Z; strash
+strash; orchestrate -K 8 -N 1 -z -Z; strash
+write_aiger c880_work/c880_11.aig
+read_aiger c880_work/c880_11.aig
+source -s abc.rc
+read_liberty c17_work/NangateOpenCellLibrary_typical.libread_liberty c17_work/NangateOpenCellLibrary_typical.libread_liberty c17_work/NangateOpenCellLibrary_typical.libread_liberty c17_work/NangateOpenCellLibrary_typical.libread_liberty c17_work/NangateOpenCellLibrary_typical.lib
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger c17_work/c17.aig
+map_oto
+mapper_extract -o c17_work/output.csv
+phyread c17_work/output.csv
+phyopt -n 2 -k 2
+strash
+write_aiger c17_work/c17_phyopt_local.aig
+cec -n c17_work/c17.aig c17_work/c17_phyopt_local.aigcec -n c17_work/c17.aig c17_work/c17_phyopt_local.aig
+cec -n c17_work/c17.aig c17_work/c17_phyopt_local.aig
+read_aiger c17_work/c17_phyopt_local.aig
+source -s abc.rc
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger c880_work/c880.aig
+map_oto
+mapper_extract -o c880_work/output.csv
+phyread c880_work/output.csv
+phyopt -n 2 -k 25
+strash
+write_aiger c880_work/c880_phyopt_local.aig
+cec -n c880_work/c880.aig c880_work/c880_phyopt_local.aig
+read_aiger c880_work/c880_phyopt_local.aig
+source -s abc.rc
+read_liberty c17_work/NangateOpenCellLibrary_typical.lib
+read_aiger c880_work/c880.aig
+map_oto
+mapper_extract -o c880_work/output.csv
+phyread c880_work/output.csv
+phyopt -n 2 -k 25
+strash
+write_aiger c880_work/c880_phyopt_local.aig
+cec -n c880_work/c880.aig c880_work/c880_phyopt_local.aig
+read_aiger c880_work/c880_phyopt_local.aig
+source -s abc.rc
+read_truth 88
+print_kmap
+collapse
+show_bdd
+echo $DISPLAY
+export DISPLAY=localhost:0.0
+read_aiger iwls26/results/ex205_017.aig
+read_libary my_work/c17_work/NangateOpenCellLibrary_typical.lib
+read_library my_work/c17_work/NangateOpenCellLibrary_typical.lib
+read_library NangateOpenCellLibrary_typical.lib
+source -s abc.rc
+read_lib NangateOpenCellLibrary_typical.lib
+read_aiger my_work/dynamic_scheduler_work/result/run_iwls26_ex205017_new_accept/ex205_017/ex205_017_cfg_winvpair_base.aig
+read_blif my_work/tmp/ex205_017_after_mapped.blif
+strash
+writea_aiger my_work\tmp\ex205_017_after_mapped.aig
+write_aiger my_work\tmp\ex205_017_after_mapped.aig
+write_aiger my_work/tmp/ex205_017_after_mapped.aig
+read_aiger my_work/tmp/ex205_017_after_mapped.aig
+read_aiger iwls26/results/ex245_015.aig
+source D:/My_abc_work/abc/my_work/VS-SMABC_FPRM/run_raw_aig.abc
+source D:\My_abc_work\abc\my_work\VS-SMABC_FPRM\run_raw_aig.abc
+source /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/run_raw_aig.abc
+source /mnt/d/My_abc_work/abc/my_work/VS-SMABC_FPRM/run_opt_aig.abc
+source -s abc.rc
+my_work/VS-SMABC_FPRM/run_opt_aig.abc
+phymid -h
+read_aiger my_work/VS-SMABC_FPRM/aig_output_opt/br1_opt.aig
+read_lib NangateOpenCellLibrary_typical.lib
+read_aiger my_work/VS-SMABC_FPRM/aig_output_raw/br1_raw.aig

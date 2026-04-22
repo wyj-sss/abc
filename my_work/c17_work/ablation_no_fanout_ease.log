@@ -1,0 +1,20 @@
+[info] root=/mnt/d/My_abc_work/abc
+[info] liberty=c17_work/NangateOpenCellLibrary_typical.lib
+[info] rounds=1 part_size=5
+[info] show_qor=1 clean_output=1
+[info] phyread_args='-i 0.4 -p 0.3 -f 0 -g 0.1' phyopt_args=''
+[build] make -j1
+make: Nothing to be done for 'all'.
+[info] benches=c17
+[qor] c17: BEFORE
+        ======== ABC command line "source /tmp/phyopt_stat_before_c17_1882.scr"
+        Warning: Detected 2 multi-output cells (for example, "FA_X1").
+        [1;37mc17_work/c17                  :[0m i/o =    5/    2  lat =    0  nd =     6  edge =     12  area = 5.05  delay = 2.00  lev = 2
+[run] c17: rounds=1 part_size=5
+[pass] c17: equivalent
+        out: c17_work/c17_phyopt_local.aig
+[qor] c17: AFTER
+        ======== ABC command line "source /tmp/phyopt_stat_after_c17_1882.scr"
+        Warning: Detected 2 multi-output cells (for example, "FA_X1").
+        [1;37mc17_work/c17_phyopt_local     :[0m i/o =    5/    2  lat =    0  nd =     6  edge =     12  area = 5.05  delay = 2.00  lev = 2
+[summary] pass=1 fail=0 skip=0
