@@ -469,9 +469,10 @@ static int MapperExtractWriteCsv( Abc_Ntk_t * pNtk, MapperExtractPar_t * Pars )
         Abc_NtkForEachNode( pNtk, pObj, i )
         {
             int id = Abc_ObjId( pObj );
+            int nFanins = Abc_ObjFaninNum( pObj );
             const char * name = Abc_ObjName( pObj ) ? Abc_ObjName( pObj ) : "(null)";
-            int fan0 = Abc_ObjFanin0(pObj) ? Abc_ObjId(Abc_ObjFanin0(pObj)) : -1;
-            int fan1 = Abc_ObjFanin1(pObj) ? Abc_ObjId(Abc_ObjFanin1(pObj)) : -1;
+            int fan0 = (nFanins > 0) ? Abc_ObjId( Abc_ObjFanin0(pObj) ) : -1;
+            int fan1 = (nFanins > 1) ? Abc_ObjId( Abc_ObjFanin1(pObj) ) : -1;
             
             Mio_Gate_t * pGate = (Mio_Gate_t *)pObj->pData;
             const char * gateName = pGate ? Mio_GateReadName(pGate) : "NULL";

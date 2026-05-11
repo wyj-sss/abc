@@ -21083,9 +21083,10 @@ int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
     int fUseProfile;
     int fUseBuffs;
     int fVerbose;
+    int fStructural;
     int c;
     extern Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
-    extern Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+    extern Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose, int fStructural );
     extern int Abc_NtkFraigSweep( Abc_Ntk_t * pNtk, int fUseInv, int fExdc, int fVerbose, int fVeryVerbose );
 
     pNtk = Abc_FrameReadNtk(pAbc);
@@ -21101,8 +21102,9 @@ int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
     fUseProfile = 0;
     fUseBuffs   = 0;
     fVerbose    = 0;
+    fStructural = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "DABFSGMarspfuovh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "DABFSGMarspfuovhT" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21203,6 +21205,9 @@ int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
         case 'v':
             fVerbose ^= 1;
             break;
+        case 'T':
+            fStructural ^= 1;
+            break;
         case 'h':
             goto usage;
         default:
@@ -21228,7 +21233,7 @@ int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
             return 1;
         }
         Abc_Print( 0, "The network was strashed before one-to-one mapping.\n" );
-        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose, fStructural );
         if ( pNtkRes == NULL )
         {
             Abc_NtkDelete( pNtk );
@@ -21240,7 +21245,7 @@ int Abc_CommandMapOto( Abc_Frame_t * pAbc, int argc, char ** argv )
       else
     {
         // get the new network
-        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
+        pNtkRes = Abc_NtkMapOto( pNtk, /*userLib=*/NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain, nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose, fStructural );
         if ( pNtkRes == NULL )
         {
             Abc_Print( -1, "Mapping has failed.\n" );
@@ -21267,7 +21272,7 @@ usage:
         sprintf(Buffer, "not used" );
     else
         sprintf(Buffer, "%.3f", DelayTarget );
-    Abc_Print( -2, "usage: map_oto [-DABFSG float] [-M num] [-arspfuovh]\n" );
+    Abc_Print( -2, "usage: map_oto [-DABFSG float] [-M num] [-arspfuovhT]\n" );
     Abc_Print( -2, "\t           performs one-to-one technology mapping with K=2 constraint\n" );
     Abc_Print( -2, "\t-D float : sets the global required times [default = %s]\n", Buffer );
     Abc_Print( -2, "\t-A float : \"area multiplier\" to bias gate selection [default = %.2f]\n", AreaMulti );
@@ -21284,6 +21289,7 @@ usage:
     Abc_Print( -2, "\t-u       : use standard-cell profile [default = %s]\n", fUseProfile? "yes": "no" );
     Abc_Print( -2, "\t-o       : toggles using buffers to decouple combinational outputs [default = %s]\n", fUseBuffs? "yes": "no" );
     Abc_Print( -2, "\t-v       : toggles verbose output [default = %s]\n", fVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-T       : toggles structural mapping mode (no INV cells) [default = %s]\n", fStructural? "yes": "no" );
     Abc_Print( -2, "\t-h       : print the command usage\n");
     return 1;
 }
@@ -21307,13 +21313,13 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
     float AlphaMiddle = 0.50f;
     float AlphaHigh = 0.80f;
     float WInvChain, WPairCollapse, WFanoutEase, WGateScore;
-    int c;
+    int c, fWriteBack = 0;
     (void)pAbc;
 
     Phy_GetStructRawWeights( &WInvChain, &WPairCollapse, &WFanoutEase, &WGateScore );
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "vLMHipfgh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "vLMHipfghw" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21397,6 +21403,9 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
             if ( WGateScore < 0.0f )
                 goto usage;
             break;
+        case 'w':
+            fWriteBack ^= 1;
+            break;
         case 'h':
             goto usage;
         default:
@@ -21428,11 +21437,17 @@ int Abc_CommandPhyRead( Abc_Frame_t * pAbc, int argc, char ** argv )
     if ( s_pPhyData == NULL )
         return 1;
 
+    if ( fWriteBack )
+    {
+        Phy_DataWriteCsv( s_pPhyData, pFileName, fVerbose );
+    }
+
     Phy_DataPrintStats( s_pPhyData );
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: phyread [-L float] [-M float] [-H float] [-i float] [-p float] [-f float] [-g float] [-vh] <file.csv>\n" );
+    Abc_Print( -2, "usage: phyread [-L float] [-M float] [-H float] [-i float] [-p float] [-f float] [-g float] [-wh] <file.csv>\n" );
+    Abc_Print( -2, "\t-w     : write back computed potentials to the same CSV file\n" );
     Abc_Print( -2, "\t         reads extracted physical CSV information into memory\n" );
     Abc_Print( -2, "\t-L float: alpha for low-criticality potential   [default = %.2f]\n", AlphaLow );
     Abc_Print( -2, "\t-M float: alpha for middle-criticality potential[default = %.2f]\n", AlphaMiddle );
@@ -21749,29 +21764,34 @@ usage:
 int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     char * pCsvFile = "output.csv";
-    int nRounds = 3;
+    int nRounds = 1;
     int nTop = 40;
     int nCaseTimeoutSec = 300;
     int fVerbose = 1;
     int fDynamicOrder = 1;
-    float CritLow = 0.25f;
-    float CritHigh = 0.90f;
-    float WInvChain = 0.50f;
-    float WPairCollapse = 0.40f;
-    float WFanoutEase = 0.05f;
-    float WGateScore = 0.05f;
+    float CritLow = 0.15f;
+    float CritHigh = 0.95f;
+    float AlphaLow = 0.10f;
+    float AlphaMiddle = 0.20f;
+    float AlphaHigh = 0.40f;
+    float WInvChain = 0.00f;
+    float WPairCollapse = 0.60f;
+    float WFanoutEase = 0.20f;
+    float WGateScore = 0.20f;
     char BufRounds[32], BufTop[32], BufLow[32], BufHigh[32], BufTimeout[32];
     char BufInv[32], BufPair[32], BufFan[32], BufGate[32];
+    char BufAlphaLow[32], BufAlphaMid[32], BufAlphaHigh[32];
     char * pArgvMapOto[3];
     char * pArgvExtract[5];
-    char * pArgvPhyRead[16];
+    char * pArgvPhyRead[22];
     char * pArgvPhyOpt[20];
     char * pArgvMap[3];
     int nArgcMapOto, nArgcExtract, nArgcPhyRead, nArgcPhyOpt, nArgcMap;
     int c;
+    Abc_Ntk_t * pNtk, * pDupSave, * pDupWork;
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "C:n:k:L:H:t:i:p:f:g:dvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "C:n:k:L:H:A:B:G:t:i:p:f:g:dvh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21823,6 +21843,21 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
             if ( WGateScore < 0.0f )
                 goto usage;
             break;
+        case 'A':
+            AlphaLow = (float)atof( globalUtilOptarg );
+            if ( AlphaLow < 0.0f || AlphaLow > 1.0f )
+                goto usage;
+            break;
+        case 'B':
+            AlphaMiddle = (float)atof( globalUtilOptarg );
+            if ( AlphaMiddle < 0.0f || AlphaMiddle > 1.0f )
+                goto usage;
+            break;
+        case 'G':
+            AlphaHigh = (float)atof( globalUtilOptarg );
+            if ( AlphaHigh < 0.0f || AlphaHigh > 1.0f )
+                goto usage;
+            break;
         case 'd':
             fDynamicOrder ^= 1;
             break;
@@ -21867,15 +21902,44 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
 
     if ( fVerbose )
-        Abc_Print( 1, "phymid: running map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
+        Abc_Print( 1, "phymid: running strash -> map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
+
+    /* strash first: all work stays on AIG, mapped net is a temporary artifact */
+    if ( Cmd_CommandExecute( pAbc, "strash" ) )
+    {
+        Abc_Print( -1, "phymid: step strash failed.\n" );
+        return 1;
+    }
+
+    /* duplicate AIG for timing extraction; discard after mapper_extract */
+    pNtk = Abc_FrameReadNtk( pAbc );
+    if ( pNtk == NULL )
+    {
+        Abc_Print( -1, "phymid: no network after strash.\n" );
+        return 1;
+    }
+    pDupSave = Abc_NtkDup( pNtk );
+    pDupWork = Abc_NtkDup( pNtk );
+    if ( pDupSave == NULL || pDupWork == NULL )
+    {
+        if ( pDupSave ) Abc_NtkDelete( pDupSave );
+        if ( pDupWork ) Abc_NtkDelete( pDupWork );
+        Abc_Print( -1, "phymid: failed to duplicate network.\n" );
+        return 1;
+    }
+
+    Abc_FrameReplaceCurrentNetwork( pAbc, pDupWork );
 
     nArgcMapOto = 0;
     pArgvMapOto[nArgcMapOto++] = "map_oto";
+    pArgvMapOto[nArgcMapOto++] = "-s";  /* disable sweep: DFS reorder changes ObjIds */
+    pArgvMapOto[nArgcMapOto++] = "-T";  /* structural mapping: no INV cells, 1-to-1 AIG-to-gate */
     if ( fVerbose )
         pArgvMapOto[nArgcMapOto++] = "-v";
     if ( Abc_CommandMapOto( pAbc, nArgcMapOto, pArgvMapOto ) )
     {
-        Abc_Print( -1, "phymid: step map_oto failed.\n" );
+        Abc_Print( -1, "phymid: step map_oto on duplicate failed.\n" );
+        Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
         return 1;
     }
 
@@ -21887,19 +21951,32 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
         pArgvExtract[nArgcExtract++] = "-v";
     if ( Mapper_CommandExtract( pAbc, nArgcExtract, pArgvExtract ) )
     {
-        Abc_Print( -1, "phymid: step mapper_extract failed.\n" );
+        Abc_Print( -1, "phymid: step mapper_extract on duplicate failed.\n" );
+        Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
         return 1;
     }
+
+    /* restore original AIG; mapped duplicate is discarded by ReplaceCurrentNetwork */
+    Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
 
     sprintf( BufInv, "%.6g", WInvChain );
     sprintf( BufPair, "%.6g", WPairCollapse );
     sprintf( BufFan, "%.6g", WFanoutEase );
     sprintf( BufGate, "%.6g", WGateScore );
+    sprintf( BufAlphaLow, "%.6g", AlphaLow );
+    sprintf( BufAlphaMid, "%.6g", AlphaMiddle );
+    sprintf( BufAlphaHigh, "%.6g", AlphaHigh );
 
     nArgcPhyRead = 0;
     pArgvPhyRead[nArgcPhyRead++] = "phyread";
-    if ( !fVerbose )
+    if ( fVerbose )
         pArgvPhyRead[nArgcPhyRead++] = "-v";
+    pArgvPhyRead[nArgcPhyRead++] = "-L";
+    pArgvPhyRead[nArgcPhyRead++] = BufAlphaLow;
+    pArgvPhyRead[nArgcPhyRead++] = "-M";
+    pArgvPhyRead[nArgcPhyRead++] = BufAlphaMid;
+    pArgvPhyRead[nArgcPhyRead++] = "-H";
+    pArgvPhyRead[nArgcPhyRead++] = BufAlphaHigh;
     pArgvPhyRead[nArgcPhyRead++] = "-i";
     pArgvPhyRead[nArgcPhyRead++] = BufInv;
     pArgvPhyRead[nArgcPhyRead++] = "-p";
@@ -21908,6 +21985,7 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     pArgvPhyRead[nArgcPhyRead++] = BufFan;
     pArgvPhyRead[nArgcPhyRead++] = "-g";
     pArgvPhyRead[nArgcPhyRead++] = BufGate;
+    pArgvPhyRead[nArgcPhyRead++] = "-w";
     pArgvPhyRead[nArgcPhyRead++] = pCsvFile;
     if ( Abc_CommandPhyRead( pAbc, nArgcPhyRead, pArgvPhyRead ) )
     {
@@ -21925,7 +22003,7 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     pArgvPhyOpt[nArgcPhyOpt++] = "phyopt";
     if ( fDynamicOrder )
         pArgvPhyOpt[nArgcPhyOpt++] = "-d";
-    if ( !fVerbose )
+    if ( fVerbose )
         pArgvPhyOpt[nArgcPhyOpt++] = "-v";
     pArgvPhyOpt[nArgcPhyOpt++] = "-n";
     pArgvPhyOpt[nArgcPhyOpt++] = BufRounds;
@@ -21940,6 +22018,13 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     if ( Abc_CommandPhyOpt( pAbc, nArgcPhyOpt, pArgvPhyOpt ) )
     {
         Abc_Print( -1, "phymid: step phyopt failed.\n" );
+        return 1;
+    }
+
+    /* strash back to AIG after phyopt before final map */
+    if ( Cmd_CommandExecute( pAbc, "strash" ) )
+    {
+        Abc_Print( -1, "phymid: step strash after phyopt failed.\n" );
         return 1;
     }
 
@@ -21958,7 +22043,7 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: phymid [-C file.csv] [-n num] [-k num] [-L float] [-H float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
+    Abc_Print( -2, "usage: phymid [-C file.csv] [-n num] [-k num] [-L float] [-H float] [-A float] [-B float] [-G float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
     Abc_Print( -2, "\t         runs middle flow only: map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
     Abc_Print( -2, "\t         keep IO outside: read_aiger ...; phymid ...; write_verilog/write_blif ...\n" );
     Abc_Print( -2, "\t-C file: CSV path used by mapper_extract and phyread [default = %s]\n", pCsvFile );
@@ -21966,6 +22051,9 @@ usage:
     Abc_Print( -2, "\t-k num : partition size/top-k (phyopt -k) [default = %d]\n", nTop );
     Abc_Print( -2, "\t-L float: low-criticality threshold (phyopt -L) [default = %.2f]\n", CritLow );
     Abc_Print( -2, "\t-H float: high-criticality threshold (phyopt -H) [default = %.2f]\n", CritHigh );
+    Abc_Print( -2, "\t-A float: alpha for low-criticality potential (phyread -L) [default = %.2f]\n", AlphaLow );
+    Abc_Print( -2, "\t-B float: alpha for middle-criticality potential (phyread -M) [default = %.2f]\n", AlphaMiddle );
+    Abc_Print( -2, "\t-G float: alpha for high-criticality potential (phyread -H) [default = %.2f]\n", AlphaHigh );
     Abc_Print( -2, "\t-t sec : per-case timeout seconds (phyopt -t) [default = %d]\n", nCaseTimeoutSec );
     Abc_Print( -2, "\t-i float: struct_raw weight inv-chain (phyread -i) [default = %.2f]\n", WInvChain );
     Abc_Print( -2, "\t-p float: struct_raw weight pair-collapse (phyread -p) [default = %.2f]\n", WPairCollapse );

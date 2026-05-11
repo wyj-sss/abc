@@ -1,5 +1,6 @@
 #include "opt/physical/phyOpt.h"
 #include "map/mio/mio.h"
+#include "aig/aig/aig.h"
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
@@ -16,6 +17,8 @@ ABC_NAMESPACE_IMPL_START
 
 extern Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti,
     float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+extern Aig_Man_t * Abc_NtkToDar( Abc_Ntk_t * pNtk, int fExors, int fRegisters );
+extern Abc_Ntk_t * Abc_NtkFromAigPhase( Aig_Man_t * pMan );
 
 typedef enum
 {
@@ -103,6 +106,8 @@ static float s_DynAnnealMin = 0.60f;
 static float s_DynAnnealDecay = 0.85f;
 static int s_DynAnnealKeepBoostPct = 20;
 static float s_DynAnnealL1Slack = 0.20f;
+static float s_DynAnnealCurrentTemp = 1.0f;
+static float s_DynAnnealDelayRelTolMax = 0.03f;
 
 /* Partition-wise operator-sequence templates with adaptive ordering. */
 static int s_SeqAdaptiveEnable = 1;
@@ -158,6 +163,8 @@ static void Phy_FitInitFromEnv( void );
 static float Phy_FitPredict( const float * pFeat );
 static float Phy_FitBlendL0( float Heu, float Prob );
 static float Phy_FitBlendL1( float Heu, float Prob );
+static float Phy_DynAnnealTemp( int RoundId );
+static float Phy_DynAnnealScale01( float Temp );
 
 int Phy_SetPartitionThresholds( float CritLow, float CritHigh )
 {
@@ -1037,10 +1044,10 @@ static int Phy_GetWindowCenterObjId( Abc_Ntk_t * pNtk, const Phy_NodeInfo_t * pS
     if ( pNtk == NULL || pSeed == NULL )
         return -1;
 
-    pObj = Abc_NtkFindNode( pNtk, (char *)pSeed->NodeName );
-    if ( pObj && Abc_ObjIsNode(pObj) )
-        return pObj->Id;
+    if ( pSeed->ObjId >= Abc_NtkObjNumMax(pNtk) )
+        return -1;
 
+    /* 1. ObjId-based lookup (preferred: direct index into AIG object array) */
     Id = pSeed->ObjId;
     if ( Id > 0 && Id < Abc_NtkObjNumMax(pNtk) )
     {
@@ -1049,6 +1056,12 @@ static int Phy_GetWindowCenterObjId( Abc_Ntk_t * pNtk, const Phy_NodeInfo_t * pS
             return Id;
     }
 
+    /* 2. name-based lookup (fallback for when ObjId doesn't match) */
+    pObj = Abc_NtkFindNode( pNtk, (char *)pSeed->NodeName );
+    if ( pObj && Abc_ObjIsNode(pObj) )
+        return pObj->Id;
+
+    /* 3. parse ID from name (last resort) */
     Id = Phy_ParseNodeIdFromName( pSeed->NodeName );
     if ( Id > 0 && Id < Abc_NtkObjNumMax(pNtk) )
     {
@@ -1070,10 +1083,14 @@ static int Phy_WindowRadius( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, 
         Radius += s_DynLowRadiusBonus;
     if ( pSeed && pSeed->Slack < 0.05f )
         Radius += 1;
-    if ( pSeed && pSeed->Fanout > 6 )
-        Radius -= 1;
+    if ( pSeed && pSeed->Criticality >= 0.85f )
+        Radius += 1;
+    if ( pSeed && pSeed->Fanout > 8 )
+        Radius += 1;
+    if ( pSeed && pSeed->OptPotential > 0.30f )
+        Radius += 1;
     if ( Radius < 2 ) Radius = 2;
-    if ( Radius > 6 ) Radius = 6;
+    if ( Radius > 7 ) Radius = 7;
     return Radius;
 }
 
@@ -1119,6 +1136,15 @@ static int Phy_EvalMappedQoR( Abc_Ntk_t * pNtk, Phy_QoR_t * pQoR )
     if ( pNtkDup == NULL )
         return 0;
 
+    if ( !Abc_NtkIsStrash(pNtkDup) )
+    {
+        Abc_Ntk_t * pStr = Abc_NtkStrash( pNtkDup, 0, 0, 0 );
+        Abc_NtkDelete( pNtkDup );
+        pNtkDup = pStr;
+        if ( pNtkDup == NULL )
+            return 0;
+    }
+
     pMapped = Abc_NtkMap( pNtkDup, NULL, DelayTarget, AreaMulti, DelayMulti, LogFan, Slew, Gain,
         nGatesMin, fRecovery, fSwitching, fSkipFanout, fUseProfile, fUseBuffs, fVerbose );
     Abc_NtkDelete( pNtkDup );
@@ -1136,6 +1162,11 @@ static double Phy_QorDelayBudget( Phy_QoR_t Before )
     double Rel = Before.Delay * s_QorDelayRelTol;
     if ( Rel < 0.0 )
         Rel = 0.0;
+    if ( s_DynAnnealEnable )
+    {
+        float Scale = Phy_DynAnnealScale01( s_DynAnnealCurrentTemp );
+        Rel += Before.Delay * (double)Scale * (double)s_DynAnnealDelayRelTolMax;
+    }
     return s_QorDelayAbsEps + Rel;
 }
 
@@ -1155,9 +1186,8 @@ static int Phy_QorGoalHit( Phy_QoR_t Before, Phy_QoR_t After )
     return AreaImprPct >= s_QorGoalMinAreaImprPct;
 }
 
-static int Phy_AcceptByMappedQoR( Phy_PartType_t Part, Phy_QoR_t Before, Phy_QoR_t After )
+static int Phy_AcceptByMappedQoR( Phy_QoR_t Before, Phy_QoR_t After )
 {
-    (void)Part;
     if ( !Phy_QorDelayNoWorse( Before, After ) )
         return 0;
     if ( After.Area < Before.Area - s_QorAreaEps )
@@ -1167,11 +1197,10 @@ static int Phy_AcceptByMappedQoR( Phy_PartType_t Part, Phy_QoR_t Before, Phy_QoR
     return 0;
 }
 
-static int Phy_ClassifyMappedReject( Phy_PartType_t Part, Phy_QoR_t Before, Phy_QoR_t After )
+static int Phy_ClassifyMappedReject( Phy_QoR_t Before, Phy_QoR_t After )
 {
     int fDelayWorse;
     int fAreaWorse;
-    (void)Part;
 
     fDelayWorse = !Phy_QorDelayNoWorse( Before, After );
     fAreaWorse = After.Area > Before.Area + s_QorAreaEps;
@@ -1254,14 +1283,41 @@ static Phy_Data_t * Phy_RefreshDataForRound( Abc_Frame_t * pAbc, const Phy_Data_
     char Cmd[1200];
     const char * pOut = (pDataBase && pDataBase->FileName[0]) ? pDataBase->FileName : "phyopt_refresh.csv";
     Phy_Data_t * pDataNew;
+    Abc_Ntk_t * pNtk, * pDupSave, * pDupWork;
 
-    if ( Cmd_CommandExecute( pAbc, "map_oto" ) )
-        return NULL;
-    snprintf( Cmd, sizeof(Cmd), "mapper_extract -o %s", pOut );
-    if ( Cmd_CommandExecute( pAbc, Cmd ) )
-        return NULL;
+    /* strash the main AIG to get clean IDs for this round */
     if ( Cmd_CommandExecute( pAbc, "strash" ) )
         return NULL;
+
+    /* duplicate: one copy to keep (save), one to map/extract (work) */
+    pNtk = Abc_FrameReadNtk( pAbc );
+    if ( pNtk == NULL )
+        return NULL;
+    pDupSave = Abc_NtkDup( pNtk );
+    pDupWork = Abc_NtkDup( pNtk );
+    if ( pDupSave == NULL || pDupWork == NULL )
+    {
+        if ( pDupSave ) Abc_NtkDelete( pDupSave );
+        if ( pDupWork ) Abc_NtkDelete( pDupWork );
+        return NULL;
+    }
+
+    /* work on duplicate for timing extraction */
+    Abc_FrameReplaceCurrentNetwork( pAbc, pDupWork );
+    if ( Cmd_CommandExecute( pAbc, "map_oto -s" ) )
+    {
+        Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
+        return NULL;
+    }
+    snprintf( Cmd, sizeof(Cmd), "mapper_extract -o %s", pOut );
+    if ( Cmd_CommandExecute( pAbc, Cmd ) )
+    {
+        Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
+        return NULL;
+    }
+
+    /* restore original AIG; mapped duplicate is discarded */
+    Abc_FrameReplaceCurrentNetwork( pAbc, pDupSave );
 
     pDataNew = Phy_DataReadCsv( pOut,
         pDataBase ? pDataBase->AlphaLow : 0.3f,
@@ -1337,22 +1393,24 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
     {
         if ( SeqTemplate == 0 )
         {
-            pCmds[nCmds++] = "rewrite -z";
+            pCmds[nCmds++] = "rewrite";
             pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "refactor -z";
+            pCmds[nCmds++] = "refactor";
+            pCmds[nCmds++] = "rewrite -z";
         }
         else if ( SeqTemplate == 1 )
         {
-            pCmds[nCmds++] = "refactor -z";
-            pCmds[nCmds++] = "rewrite -z";
+            pCmds[nCmds++] = "refactor";
+            pCmds[nCmds++] = "rewrite";
             pCmds[nCmds++] = "balance";
             pCmds[nCmds++] = "rewrite -z";
         }
         else
         {
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "refactor -z";
+            pCmds[nCmds++] = "rewrite";
+            pCmds[nCmds++] = "refactor";
             pCmds[nCmds++] = "balance";
+            pCmds[nCmds++] = "rewrite -z";
         }
     }
     else
@@ -1389,19 +1447,17 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     Abc_Ntk_t * pNtk = Abc_FrameReadNtk( pAbc );
     Abc_Ntk_t * pNtkBase;
     Abc_Ntk_t * pNtkBeforeExt;
-    Abc_Ntk_t * pNtkBeforeIns;
     Abc_Obj_t * pCenter;
     int RetValue;
     int nCutsMax, nNodesMax, nLevelsOdc, nNodeSizeMax, nConeSizeMax;
-    char Cmd[1024];
-    char WinFile[512];
-    int fWinFileWritten = 0;
     int fUseZerosRwr = 1, fUseZerosRef = 1, fPlaceEnable = 0;
     int fUpdateLevel = 1, fVerbose = 0, fVeryVerbose = 0, fUseDcs = 0;
 
     extern int Abc_NtkOrchLocal( Abc_Ntk_t * pNtk, int fUseZeros_rwr, int fUseZeros_ref,
         int fPlaceEnable, int nCutsMax, int nNodesMax, int nLevelsOdc, int fUpdateLevel,
         int fVerbose, int fVeryVerbose, int nNodeSizeMax, int nConeSizeMax, int fUseDcs );
+    extern Abc_Ntk_t * Abc_NtkDarExtWin( Abc_Ntk_t * pNtk, int nObjId, int nDist, int fVerbose );
+    extern Abc_Ntk_t * Abc_NtkDarInsWin( Abc_Ntk_t * pNtk, Abc_Ntk_t * pWnd, int nObjId, int nDist, int fVerbose );
 
     if ( pNtk == NULL || nObjIdCenter <= 0 || nRadius <= 0 )
         return 1;
@@ -1414,12 +1470,41 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     if ( pNtkBase == NULL )
         return 1;
 
-    pNtkBeforeExt = Abc_FrameReadNtk( pAbc );
-    snprintf( Cmd, sizeof(Cmd), "extwin -N %d -D %d", nObjIdCenter, nRadius );
-    if ( Cmd_CommandExecute( pAbc, Cmd ) )
+    /* Resolve center's AIG ObjId via pCopy, then use ABC's built-in extwin.
+       Abc_NtkDarExtWin uses nObjId directly in AIG space (after its internal
+       Abc_NtkToDar call). We must pass the AIG ObjId, not the ABC ObjId. */
     {
-        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
-        return 1;
+        Aig_Man_t * pManTmp;
+        Aig_Obj_t * pAigCenter;
+        int nAigObjId;
+        Abc_Ntk_t * pNtkWin;
+
+        pManTmp = Abc_NtkToDar( pNtk, 0, 1 );
+        if ( pManTmp == NULL )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+        pAigCenter = (Aig_Obj_t *)pCenter->pCopy;
+        if ( pAigCenter == NULL )
+        {
+            Aig_ManStop( pManTmp );
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+        nAigObjId = pAigCenter->Id;
+        Aig_ManStop( pManTmp );
+
+        pNtkWin = Abc_NtkDarExtWin( pNtk, nAigObjId, nRadius, 0 );
+        if ( pNtkWin == NULL )
+        {
+            Abc_Print( -1, "Extracting sequential window has failed.\n" );
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+
+        pNtkBeforeExt = Abc_FrameReadNtk( pAbc );
+        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkWin );
     }
 
     pNtk = Abc_FrameReadNtk( pAbc );
@@ -1450,9 +1535,9 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     }
     else if ( Part == PHY_PART_LOW )
     {
-        nCutsMax = 8;
-        nNodesMax = 1;
-        nLevelsOdc = 1;
+        nCutsMax = 12;
+        nNodesMax = 2;
+        nLevelsOdc = 2;
         nCutsMax += s_DynLowCutsBonus;
         nNodesMax += s_DynLowNodesBonus;
     }
@@ -1469,7 +1554,7 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     if ( pSeed && pSeed->Fanout > 4 )
         nNodeSizeMax -= 1;
     if ( Part == PHY_PART_LOW )
-        nNodeSizeMax -= 1;
+        nNodeSizeMax += 1;
     if ( Part == PHY_PART_LOW )
         nNodeSizeMax += s_DynLowNodeSizeBonus;
     if ( nNodeSizeMax < 6 )
@@ -1531,34 +1616,54 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
         return 1;
     }
 
-    snprintf( WinFile, sizeof(WinFile), "my_work/tmp/phyopt_win_tmp_%d.aig", nObjIdCenter );
-    snprintf( Cmd, sizeof(Cmd), "write_aiger %s", WinFile );
-    if ( Cmd_CommandExecute( pAbc, Cmd ) )
+    /* save optimized window, then insert using ABC's built-in inswin.
+       Abc_NtkDarInsWin internally uses Abc_NtkFromDarSeqSweep which preserves
+       the original network's PI/PO structure and naming. */
     {
-        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
-        return 1;
-    }
-    fWinFileWritten = 1;
+        Abc_Ntk_t * pNtkOpt = Abc_NtkDup( Abc_FrameReadNtk(pAbc) );
 
-    Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
-    pNtkBeforeIns = Abc_FrameReadNtk( pAbc );
-    snprintf( Cmd, sizeof(Cmd), "inswin -N %d -D %d %s", nObjIdCenter, nRadius, WinFile );
-    if ( Cmd_CommandExecute( pAbc, Cmd ) )
-    {
-        if ( fWinFileWritten )
-            remove( WinFile );
+        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+
+        if ( pNtkOpt != NULL )
+        {
+            /* re-find center in restored base network, resolve its AIG ObjId */
+            Abc_Obj_t * pCenterBase = (nObjIdCenter < Abc_NtkObjNumMax(pNtkBase))
+                ? Abc_NtkObj( pNtkBase, nObjIdCenter ) : NULL;
+            if ( pCenterBase != NULL && Abc_ObjIsNode(pCenterBase) )
+            {
+                Aig_Man_t * pManTmp;
+                Aig_Obj_t * pAigCenter;
+                int nAigObjId;
+                Abc_Ntk_t * pNtkResult;
+
+                pManTmp = Abc_NtkToDar( pNtkBase, 0, 1 );
+                if ( pManTmp != NULL )
+                {
+                    pAigCenter = (Aig_Obj_t *)pCenterBase->pCopy;
+                    if ( pAigCenter != NULL )
+                    {
+                        nAigObjId = pAigCenter->Id;
+                        Aig_ManStop( pManTmp );
+
+                        pNtkResult = Abc_NtkDarInsWin( pNtkBase, pNtkOpt, nAigObjId, nRadius, 0 );
+                        if ( pNtkResult != NULL )
+                        {
+                            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkResult );
+                            Abc_NtkDelete( pNtkOpt );
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        Aig_ManStop( pManTmp );
+                    }
+                }
+            }
+            Abc_NtkDelete( pNtkOpt );
+        }
+        Abc_Print( -1, "Inserting sequential window has failed.\n" );
         return 1;
     }
-    pNtk = Abc_FrameReadNtk( pAbc );
-    if ( pNtk == pNtkBeforeIns )
-    {
-        if ( fWinFileWritten )
-            remove( WinFile );
-        return 1;
-    }
-    if ( fWinFileWritten )
-        remove( WinFile );
-    return 0;
 }
 
 static int Phy_PctCount( int Total, int Pct )
@@ -1695,6 +1800,7 @@ static int Phy_ProcessSeedAttempt(
     Vec_Ptr_t * vMarkedNames,
     int fIsTopPot,
     int fVerbose,
+    Phy_QoR_t * pQoRCached,
     int * pnAccepted,
     int * pnRejected,
     int * pnSkippedMarked,
@@ -1718,6 +1824,8 @@ static int Phy_ProcessSeedAttempt(
     int fAccept;
     int fQoROkBefore, fQoROkAfter;
     int nCenterId, nRadius, SeqTemplate;
+    int nNodesBefore;
+    int nFaninSumBefore;
     Phy_QoR_t QoRBefore, QoRAfter;
 
     *pfTried = 0;
@@ -1750,14 +1858,22 @@ static int Phy_ProcessSeedAttempt(
     if ( pNtk == NULL )
         return 1;
 
-    fQoROkBefore = Phy_EvalMappedQoR( pNtk, &QoRBefore );
-    if ( !fQoROkBefore )
+    if ( pQoRCached != NULL && pQoRCached->Area > 0.0 )
     {
-        if ( fVerbose )
-            Abc_Print( 1, "phyopt: skip seed=%s (cannot evaluate mapped QoR before optimization).\n", pSeed->NodeName );
-        (*pnRejected)++;
-        pRejectReason[0]++;
-        return 0;
+        QoRBefore = *pQoRCached;
+        fQoROkBefore = 1;
+    }
+    else
+    {
+        fQoROkBefore = Phy_EvalMappedQoR( pNtk, &QoRBefore );
+        if ( !fQoROkBefore )
+        {
+            if ( fVerbose )
+                Abc_Print( 1, "phyopt: skip seed=%s (cannot evaluate mapped QoR before optimization).\n", pSeed->NodeName );
+            (*pnRejected)++;
+            pRejectReason[0]++;
+            return 0;
+        }
     }
 
     nCenterId = Phy_GetWindowCenterObjId( pNtk, pSeed );
@@ -1775,6 +1891,14 @@ static int Phy_ProcessSeedAttempt(
     pNtkBak = Abc_NtkDup( pNtk );
     if ( pNtkBak == NULL )
         return 1;
+    nNodesBefore = Abc_NtkNodeNum( pNtk );
+    {
+        Abc_Obj_t * pObj;
+        int i;
+        nFaninSumBefore = 0;
+        Abc_NtkForEachNode( pNtk, pObj, i )
+            nFaninSumBefore += Abc_ObjFaninNum( pObj );
+    }
 
     pTriedPart[Part]++;
     if ( fIsTopPot )
@@ -1798,6 +1922,26 @@ static int Phy_ProcessSeedAttempt(
     }
 
     pNtk = Abc_FrameReadNtk( pAbc );
+    /* quick pre-filter: if both node count and total fanin sum didn't decrease,
+       skip expensive delay trace. node count alone is too coarse — a netlist
+       with fewer nodes can map to smaller total area only if the fanin sum
+       (proxy for total gate size) also trends down. */
+    if ( Abc_NtkNodeNum(pNtk) >= nNodesBefore )
+    {
+        Abc_Obj_t * pObj;
+        int i, nFaninSumAfter = 0;
+        Abc_NtkForEachNode( pNtk, pObj, i )
+            nFaninSumAfter += Abc_ObjFaninNum( pObj );
+        if ( nFaninSumAfter >= nFaninSumBefore )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBak );
+            (*pnRejected)++;
+            pRejectReason[3]++; /* area_worse */
+            Phy_SeqRecordTemplate( Part, SeqTemplate, 0 );
+            return 0;
+        }
+        /* node count didn't drop but fanin sum did — worth a full eval */
+    }
     fQoROkAfter = Phy_EvalMappedQoR( pNtk, &QoRAfter );
     if ( !fQoROkAfter )
     {
@@ -1815,13 +1959,15 @@ static int Phy_ProcessSeedAttempt(
     if ( *pAreaImprPct >= 0.05 && *pDelayDelta <= 0.0 )
         *pfEffectiveImprove = 1;
 
-    fAccept = Phy_AcceptByMappedQoR( Part, QoRBefore, QoRAfter );
+    fAccept = Phy_AcceptByMappedQoR( QoRBefore, QoRAfter );
     if ( fAccept )
     {
         Abc_NtkDelete( pNtkBak );
         pAcceptedPart[Part]++;
         (*pnAccepted)++;
         *pfAccepted = 1;
+        if ( pQoRCached != NULL )
+            *pQoRCached = QoRAfter;
         if ( fIsTopPot )
             pTopPotAcceptedPart[Part]++;
         if ( fVerbose )
@@ -1834,7 +1980,7 @@ static int Phy_ProcessSeedAttempt(
     {
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBak );
         (*pnRejected)++;
-        pRejectReason[Phy_ClassifyMappedReject( Part, QoRBefore, QoRAfter )]++;
+        pRejectReason[Phy_ClassifyMappedReject( QoRBefore, QoRAfter )]++;
         if ( fVerbose )
             Abc_Print( 1, "phyopt: rejected (map area %.2f->%.2f, delay %.2f->%.2f).\n",
                 QoRBefore.Area, QoRAfter.Area, QoRBefore.Delay, QoRAfter.Delay );
@@ -1862,10 +2008,14 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
     int nTopPotAcceptedPart[3] = {0,0,0};
     int nRejectReason[6] = {0,0,0,0,0,0};
     int nSkippedMarked = 0, nSkippedLowSlack = 0;
+    Phy_QoR_t QoRCached = {0.0, 0.0};
     const Phy_PartType_t Order[3] = { PHY_PART_HIGH, PHY_PART_LOW, PHY_PART_MID };
 
     if ( pAbc == NULL || pData == NULL )
+    {
+        Abc_Print( -1, "phyopt: internal error (null args).\n" );
         return 1;
+    }
 
     pNtk = Abc_FrameReadNtk( pAbc );
     if ( pNtk == NULL )
@@ -1874,17 +2024,27 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
         return 1;
     }
 
-    if ( Cmd_CommandExecute( pAbc, "strash" ) )
-    {
-        Abc_Print( -1, "phyopt: failed to strash the current network.\n" );
-        return 1;
-    }
+    Abc_Print( 0, "phyopt: ENTER Phy_OptRun ntk=%s ObjNumMax=%d csv_nodes=%d\n",
+        pNtk->pName ? pNtk->pName : "?", Abc_NtkObjNumMax(pNtk), Vec_PtrSize(pData->vNodes) );
+
+    /* filter out CSV entries that don't exist in the current AIG (e.g. extra
+       INV cells inserted by map_oto for complemented edges).
+       ObjId-based: Phy_DataFilterByNetwork uses direct AIG object array lookup. */
+    Phy_DataFilterByNetwork( pData, pNtk, fVerbose );
+
+    Abc_Print( 0, "phyopt: after filter csv_nodes=%d\n", Vec_PtrSize(pData->vNodes) );
 
     if ( Vec_PtrSize( pData->vNodes ) <= 0 )
     {
         Abc_Print( -1, "phyopt: no physical nodes loaded.\n" );
         return 1;
     }
+
+    /* network is guaranteed to be strashed AIG by the phymid pipeline */
+    pNtk = Abc_FrameReadNtk( pAbc );
+    if ( pNtk && !Phy_EvalMappedQoR( pNtk, &QoRCached ) )
+        QoRCached.Area = 0.0;
+
     nWindowSize = 16;
     if ( nTop > 0 && nTop < nWindowSize )
         nWindowSize = nTop;
@@ -1898,7 +2058,6 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
     if ( nCaseTimeoutSec < 0 )
         nCaseTimeoutSec = 0;
     nTimeToStop = nCaseTimeoutSec ? ((abctime)nCaseTimeoutSec * CLOCKS_PER_SEC + Abc_Clock()) : 0;
-
     vMarkedNames = Vec_PtrAlloc( 1000 );
     if ( vMarkedNames == NULL )
     {
@@ -1957,6 +2116,8 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
         int nMaxObjId = 0;
         unsigned char * pMarked;
 
+        s_DynAnnealCurrentTemp = Phy_DynAnnealTemp( r );
+
         if ( nTimeToStop && Abc_Clock() >= nTimeToStop )
         {
             fTimeout = 1;
@@ -1969,6 +2130,17 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
         {
             Abc_Print( -1, "phyopt: round %d data refresh failed. Stop iterative optimization.\n", r + 1 );
             break;
+        }
+
+        if ( r > 0 )
+        {
+            /* Phy_RefreshDataForRound leaves network as strashed AIG */
+            pNtk = Abc_FrameReadNtk( pAbc );
+            /* filter extra-mapped-only nodes from fresh round data */
+            if ( pNtk )
+                Phy_DataFilterByNetwork( pRoundData, pNtk, fVerbose );
+            if ( pNtk && !Phy_EvalMappedQoR( pNtk, &QoRCached ) )
+                QoRCached.Area = 0.0;
         }
 
         vHigh = Vec_PtrAlloc( 100 );
@@ -2047,6 +2219,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
                     }
                     if ( Phy_ProcessSeedAttempt( pAbc, pRoundData, pSeed, Order[p], nWindowSize,
                         nMaxObjId, pMarked, vMarkedNames, (i < nTopPotCut), fVerbose,
+                        &QoRCached,
                         &nAccepted, &nRejected, &nSkippedMarked, &nSkippedLowSlack,
                         nTriedPart, nAcceptedPart, nSkippedMarkedPart, nSkippedLowSlackPart,
                         nTopPotTriedPart, nTopPotAcceptedPart, nRejectReason,
@@ -2224,6 +2397,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
 
                         if ( Phy_ProcessSeedAttempt( pAbc, pRoundData, pCand->pSeed, pCand->Part, nWindowSize,
                             nMaxObjId, pMarked, vMarkedNames, pCand->fTopPot, fVerbose,
+                            &QoRCached,
                             &nAccepted, &nRejected, &nSkippedMarked, &nSkippedLowSlack,
                             nTriedPart, nAcceptedPart, nSkippedMarkedPart, nSkippedLowSlackPart,
                             nTopPotTriedPart, nTopPotAcceptedPart, nRejectReason,
@@ -2463,6 +2637,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
 
                             if ( Phy_ProcessSeedAttempt( pAbc, pRoundData, pCand->pSeed, pCand->Part, nWindowSize,
                                 nMaxObjId, pMarked, vMarkedNames, pCand->fTopPot, fVerbose,
+                                &QoRCached,
                                 &nAccepted, &nRejected, &nSkippedMarked, &nSkippedLowSlack,
                                 nTriedPart, nAcceptedPart, nSkippedMarkedPart, nSkippedLowSlackPart,
                                 nTopPotTriedPart, nTopPotAcceptedPart, nRejectReason,
@@ -2587,7 +2762,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
     }
 
     if ( fTimeout )
-        Abc_Print( 1, "phyopt: case timeout reached, stop after current accepted network.\n" );
+        Abc_Print( 0, "phyopt: case timeout reached, stop after current accepted network.\n" );
 
     pNtk = Abc_FrameReadNtk( pAbc );
     if ( pNtk != NULL && fVerbose )
@@ -2631,8 +2806,8 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
         for ( iPart = 0; iPart < 6; iPart++ )
             Abc_Print( 1, "  - %s : %d\n", pReasonName[iPart], nRejectReason[iPart] );
         Abc_Print( 1, "phyopt: skipped marked=%d low_slack=<0.10=%d\n", nSkippedMarked, nSkippedLowSlack );
-        Abc_Print( 1, "phyopt: done, accepted=%d rejected=%d final_nodes=%d final_levels=%d.\n", nAccepted, nRejected, Abc_NtkNodeNum(pNtk), Abc_NtkLevel(pNtk) );
     }
+    Abc_Print( 0, "phyopt: done, accepted=%d rejected=%d final_nodes=%d final_levels=%d.\n", nAccepted, nRejected, Abc_NtkNodeNum(pNtk), Abc_NtkLevel(pNtk) );
 
     Phy_MarkedNameFree( vMarkedNames );
     return 0;

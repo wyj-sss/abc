@@ -64,3 +64,55 @@ tags
 /cscope
 abc.historyIWLS2026/
 IWLS2026/
+
+# 忽略 .claude 临时目录
+.claude/
+
+# 忽略测试日志和临时文件
+_phyopt_test.log
+_tmp_global_repro.sh
+adder_opt.aig
+output.csv
+phymid_results.csv
+rerun_max_square_phymid.sh
+run_phymid_batch.sh
+test_phymid.abc
+
+# 忽略 epfl_arithmetic_compare 下的 results 目录（整个）
+my_work/epfl_arithmetic_compare/results/
+
+# 忽略 phyopt_bench_logs/ablation 下除了 .csv 之外的所有文件
+my_work/phyopt_bench_logs/ablation/*
+!my_work/phyopt_bench_logs/ablation/*.csv
+
+# 忽略 VS-SMABC_FPRM 下你未明确要提交的其他内容（但仍然会跟踪已 add 的文件）
+# 如果你希望完全忽略该目录下除已添加文件外的其他文件，可以取消下面两行的注释
+# my_work/VS-SMABC_FPRM/**
+# !my_work/VS-SMABC_FPRM/**/*.csv
+
+# 忽略 .claude
+.claude/
+
+# 忽略临时日志和可执行文件
+_phyopt_test.log
+_tmp_global_repro.sh
+adder_opt.aig
+output.csv
+phymid_results.csv
+rerun_max_square_phymid.sh
+run_phymid_batch.sh
+test_phymid.abc
+arch_flags.exe
+
+# 忽略整个 VS-SMABC_FPRM 目录（你不需要提交的任何内容）
+my_work/VS-SMABC_FPRM/
+
+# 忽略 epfl_arithmetic_compare 下的 results 目录
+my_work/epfl_arithmetic_compare/results/
+
+# 忽略 phyopt_bench_logs/ablation 下除了 .csv 之外的所有文件
+my_work/phyopt_bench_logs/ablation/*
+!my_work/phyopt_bench_logs/ablation/*.csv
+
+# 忽略 compare_4way_out_wsl_smoke 等目录
+my_work/compare_4way_out_wsl_smoke/

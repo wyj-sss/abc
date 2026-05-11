@@ -366,6 +366,7 @@ typedef struct Abc_OtoMapCtx_t_
     Mio_Gate_t *  pGateNand;
     int           AndPol;
     int           NandPol;
+    int           fStructural;
     Abc_Obj_t *   pConst1;
     Abc_Obj_t *   pConst0;
 } Abc_OtoMapCtx_t;
@@ -468,7 +469,12 @@ static Abc_Obj_t * Abc_OtoConst0( Abc_OtoMapCtx_t * p )
         p->pConst0 = Abc_NtkCreateNode( p->pNtkNew );
         p->pConst0->pData = Mio_LibraryReadConst0( p->pLib );
         if ( p->pConst0->pData == NULL )
-            p->pConst0 = Abc_OtoCreateInv( p, Abc_OtoConst1(p) );
+        {
+            if ( p->fStructural )
+                p->pConst0 = Abc_OtoConst1(p);
+            else
+                p->pConst0 = Abc_OtoCreateInv( p, Abc_OtoConst1(p) );
+        }
     }
     return p->pConst0;
 }
@@ -486,6 +492,8 @@ static Abc_Obj_t * Abc_OtoGetMappedLit( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, i
         {
             Abc_Obj_t * pNeg = (Abc_Obj_t *)Vec_PtrEntry( p->vNeg, pObj->Id );
             assert( pNeg != NULL );
+            if ( p->fStructural )
+                return pNeg;
             pRes = Abc_OtoCreateInv( p, pNeg );
             Vec_PtrWriteEntry( p->vPos, pObj->Id, pRes );
         }
@@ -497,6 +505,8 @@ static Abc_Obj_t * Abc_OtoGetMappedLit( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, i
     {
         Abc_Obj_t * pPos = (Abc_Obj_t *)Vec_PtrEntry( p->vPos, pObj->Id );
         assert( pPos != NULL );
+        if ( p->fStructural )
+            return pPos;
         pRes = Abc_OtoCreateInv( p, pPos );
         Vec_PtrWriteEntry( p->vNeg, pObj->Id, pRes );
     }
@@ -505,6 +515,8 @@ static Abc_Obj_t * Abc_OtoGetMappedLit( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, i
 
 static Abc_Obj_t * Abc_OtoAdjustInputPol( Abc_OtoMapCtx_t * p, Abc_Obj_t * pObj, int fNeedOne )
 {
+    if ( p->fStructural )
+        return pObj;
     return fNeedOne ? pObj : Abc_OtoCreateInv( p, pObj );
 }
 
@@ -570,7 +582,7 @@ static void Abc_OtoAnalyzeRequiredPhases( Abc_Ntk_t * pNtk, Vec_Int_t * vNeedPos
   SeeAlso     [Abc_NtkMap]
 
 ***********************************************************************/
-Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose )
+Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose, int fStructural )
 {
     Abc_Ntk_t * pNtkNew;
     Abc_OtoMapCtx_t Ctx;
@@ -628,6 +640,7 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
     }
 
     memset( &Ctx, 0, sizeof(Ctx) );
+    Ctx.fStructural = fStructural;
     if ( !Abc_OtoSelectGates( pLibNtk, &Ctx.pGateInv, &Ctx.pGateAnd, &Ctx.AndPol, &Ctx.pGateNand, &Ctx.NandPol ) )
     {
         printf( "map_oto: failed to find required gates in library (need INV and AND/NAND).\n" );
@@ -650,6 +663,9 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
         Vec_PtrWriteEntry( Ctx.vPos, pObj->Id, pObj->pCopy );
 
     vNodes = Abc_NtkDfs( pNtk, 0 );
+    if ( fVerbose )
+        printf( "map_oto: DFS visited %d nodes (AIG has %d AND nodes)\n",
+            Vec_PtrSize(vNodes), Abc_NtkNodeNum(pNtk) );
     Vec_PtrForEachEntry( Abc_Obj_t *, vNodes, pObj, i )
     {
         Abc_Obj_t * pIn0, * pIn1, * pPos = NULL, * pNeg = NULL;
@@ -671,7 +687,8 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
             else
             {
                 pNeg = Abc_OtoCreateNandGate( &Ctx, pIn0, pIn1 );
-                pPos = Abc_OtoCreateInv( &Ctx, pNeg );
+                if ( !Ctx.fStructural )
+                    pPos = Abc_OtoCreateInv( &Ctx, pNeg );
             }
         }
         else if ( !fNeedPos && fNeedNeg )
@@ -681,7 +698,8 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
             else
             {
                 pPos = Abc_OtoCreateAndGate( &Ctx, pIn0, pIn1 );
-                pNeg = Abc_OtoCreateInv( &Ctx, pPos );
+                if ( !Ctx.fStructural )
+                    pNeg = Abc_OtoCreateInv( &Ctx, pPos );
             }
         }
         else
@@ -689,12 +707,14 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
             if ( Ctx.pGateNand )
             {
                 pNeg = Abc_OtoCreateNandGate( &Ctx, pIn0, pIn1 );
-                pPos = Abc_OtoCreateInv( &Ctx, pNeg );
+                if ( !Ctx.fStructural )
+                    pPos = Abc_OtoCreateInv( &Ctx, pNeg );
             }
             else
             {
                 pPos = Abc_OtoCreateAndGate( &Ctx, pIn0, pIn1 );
-                pNeg = Abc_OtoCreateInv( &Ctx, pPos );
+                if ( !Ctx.fStructural )
+                    pNeg = Abc_OtoCreateInv( &Ctx, pPos );
             }
         }
 
@@ -705,6 +725,8 @@ Abc_Ntk_t * Abc_NtkMapOto( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double Dela
 
     }
     Vec_PtrFree( vNodes );
+    if ( fVerbose )
+        printf( "map_oto: created %d nodes in mapped network\n", Abc_NtkNodeNum(pNtkNew) );
 
     Abc_NtkForEachCo( pNtk, pObj, i )
     {

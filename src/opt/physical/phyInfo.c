@@ -280,6 +280,45 @@ void Phy_DataRecomputePotential( Phy_Data_t * pData, float AlphaLow, float Alpha
     }
 }
 
+int Phy_DataFilterByNetwork( Phy_Data_t * pData, Abc_Ntk_t * pNtk, int fVerbose )
+{
+    Phy_NodeInfo_t * pInfo;
+    int i, nRemoved = 0;
+    int nMaxObjId;
+
+    if ( pData == NULL || pData->vNodes == NULL || pNtk == NULL )
+        return -1;
+
+    nMaxObjId = Abc_NtkObjNumMax(pNtk);
+    for ( i = Vec_PtrSize(pData->vNodes) - 1; i >= 0; --i )
+    {
+        Abc_Obj_t * pObj;
+        pInfo = (Phy_NodeInfo_t *)Vec_PtrEntry( pData->vNodes, i );
+        if ( pInfo->ObjId <= 0 || pInfo->ObjId >= nMaxObjId )
+        {
+            ABC_FREE( pInfo );
+            Vec_PtrDrop( pData->vNodes, i );
+            nRemoved++;
+            continue;
+        }
+        pObj = Abc_NtkObj( pNtk, pInfo->ObjId );
+        if ( pObj == NULL || !Abc_ObjIsNode(pObj) )
+        {
+            ABC_FREE( pInfo );
+            Vec_PtrDrop( pData->vNodes, i );
+            nRemoved++;
+        }
+    }
+
+    if ( nRemoved > 0 )
+    {
+        Phy_DataRecomputePotential( pData, pData->AlphaLow, pData->AlphaMiddle, pData->AlphaHigh, 0 );
+        if ( fVerbose )
+            Abc_Print( 1, "Filtered %d CSV entries not present in current AIG (by ObjId).\n", nRemoved );
+    }
+    return nRemoved;
+}
+
 Phy_Data_t * Phy_DataReadCsv( const char * pFileName, float AlphaLow, float AlphaMiddle, float AlphaHigh, int fVerbose )
 {
     Phy_Data_t * pData;

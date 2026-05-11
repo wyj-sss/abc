@@ -48,6 +48,7 @@ typedef struct Phy_Data_t_
 } Phy_Data_t;
 
 extern Phy_Data_t * Phy_DataReadCsv( const char * pFileName, float AlphaLow, float AlphaMiddle, float AlphaHigh, int fVerbose );
+extern int          Phy_DataFilterByNetwork( Phy_Data_t * pData, Abc_Ntk_t * pNtk, int fVerbose );
 extern void         Phy_DataRecomputePotential( Phy_Data_t * pData, float AlphaLow, float AlphaMiddle, float AlphaHigh, int fVerbose );
 extern void         Phy_SetStructRawWeights( float WInvChain, float WPairCollapse, float WFanoutEase, float WGateScore );
 extern void         Phy_GetStructRawWeights( float * pWInvChain, float * pWPairCollapse, float * pWFanoutEase, float * pWGateScore );
