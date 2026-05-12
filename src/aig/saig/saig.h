@@ -183,7 +183,9 @@ extern Aig_Man_t *       Saig_ManDupInitZero( Aig_Man_t * p );
 extern Aig_Man_t *       Saig_ManTimeframeSimplify( Aig_Man_t * pAig, int nFrames, int nFramesMax, int fInit, int fVerbose );
 /*=== saigWnd.c ==========================================================*/
 extern Aig_Man_t *       Saig_ManWindowExtract( Aig_Man_t * p, Aig_Obj_t * pObj, int nDist );
+extern Aig_Man_t *       Saig_ManWindowExtractNodes( Aig_Man_t * p, Vec_Ptr_t * vNodes );
 extern Aig_Man_t *       Saig_ManWindowInsert( Aig_Man_t * p, Aig_Obj_t * pObj, int nDist, Aig_Man_t * pWnd );
+extern Aig_Man_t *       Saig_ManWindowInsertNodes( Aig_Man_t * p, Vec_Ptr_t * vNodes, Aig_Man_t * pWnd );
 extern Aig_Obj_t *       Saig_ManFindPivot( Aig_Man_t * p );
 
 

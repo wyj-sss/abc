@@ -1,6 +1,7 @@
 #include "opt/physical/phyOpt.h"
 #include "map/mio/mio.h"
 #include "aig/aig/aig.h"
+#include "aig/saig/saig.h"
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
@@ -1072,26 +1073,144 @@ static int Phy_GetWindowCenterObjId( Abc_Ntk_t * pNtk, const Phy_NodeInfo_t * pS
     return -1;
 }
 
+/* Dynamic Cone Window: separate fanin/fanout radii per partition.
+   HIGH  = timing cone (deep fanin into critical predecessors, shallow fanout).
+   LOW   = structural sharing (broad fanin for shared logic, minimal fanout).
+   MID   = balanced (symmetric BFS, equivalent to legacy behavior). */
+static void Phy_ConeRadii( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, int nWindowSize, int * pFaninRadius, int * pFanoutRadius )
+{
+    int BaseFi, BaseFo;
+
+    if ( nWindowSize >= 32 )      { BaseFi = 5; BaseFo = 5; }
+    else if ( nWindowSize >= 16 ) { BaseFi = 4; BaseFo = 4; }
+    else if ( nWindowSize >= 8 )  { BaseFi = 3; BaseFo = 3; }
+    else                          { BaseFi = 2; BaseFo = 2; }
+
+    if ( Part == PHY_PART_HIGH )
+    {
+        BaseFi += 7;
+        BaseFo -= 2;
+    }
+    else if ( Part == PHY_PART_LOW )
+    {
+        BaseFi += 4;
+        BaseFo -= 2;
+        BaseFi += s_DynLowRadiusBonus;
+    }
+
+    if ( pSeed && pSeed->Slack < 0.05f )
+        BaseFi += 1;
+    if ( pSeed && pSeed->Criticality >= 0.85f )
+        BaseFi += 1;
+    if ( pSeed && pSeed->Fanout > 8 )
+        BaseFo += 1;
+    if ( pSeed && pSeed->OptPotential > 0.30f )
+        BaseFi += 1;
+
+    if ( BaseFi < 2 )  BaseFi = 2;
+    if ( BaseFi > 15 ) BaseFi = 15;
+    if ( BaseFo < 1 )  BaseFo = 1;
+    if ( BaseFo > 10 ) BaseFo = 10;
+
+    *pFaninRadius  = BaseFi;
+    *pFanoutRadius = BaseFo;
+}
+
+/* Legacy wrapper: returns symmetric radius for MID partition (and callers
+   that haven't been upgraded to the cone model). */
 static int Phy_WindowRadius( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, int nWindowSize )
 {
-    int Radius = (nWindowSize >= 32) ? 5 : (nWindowSize >= 16 ? 4 : (nWindowSize >= 8 ? 3 : 2));
-    if ( Part == PHY_PART_HIGH )
-        Radius += 1;
-    if ( Part == PHY_PART_LOW )
-        Radius -= 1;
-    if ( Part == PHY_PART_LOW )
-        Radius += s_DynLowRadiusBonus;
-    if ( pSeed && pSeed->Slack < 0.05f )
-        Radius += 1;
-    if ( pSeed && pSeed->Criticality >= 0.85f )
-        Radius += 1;
-    if ( pSeed && pSeed->Fanout > 8 )
-        Radius += 1;
-    if ( pSeed && pSeed->OptPotential > 0.30f )
-        Radius += 1;
-    if ( Radius < 2 ) Radius = 2;
-    if ( Radius > 7 ) Radius = 7;
-    return Radius;
+    int FiR, FoR;
+    Phy_ConeRadii( pSeed, Part, nWindowSize, &FiR, &FoR );
+    return (FiR > FoR) ? FiR : FoR;
+}
+
+/* Asymmetric AIG cone traversal.
+   Fanin hops consume the fanin budget only; fanout hops consume the fanout
+   budget only.  This produces a directional cone: deep in the fanin direction
+   (critical predecessors / shared logic) while staying narrow in the fanout
+   direction. */
+static void Phy_AigConeAsym_rec( Aig_Man_t * p, Aig_Obj_t * pObj,
+    int nFiR, int nFoR, Vec_Ptr_t * vNodes, int * pBestFi, int * pBestFo )
+{
+    Aig_Obj_t * pMatch, * pFanout;
+    int fCollected, iFanout, i;
+    int fBetterFi, fBetterFo;
+
+    if ( pBestFi[pObj->Id] >= nFiR && pBestFo[pObj->Id] >= nFoR )
+        return;
+
+    fBetterFi = (nFiR > pBestFi[pObj->Id]);
+    fBetterFo = (nFoR > pBestFo[pObj->Id]);
+    if ( fBetterFi ) pBestFi[pObj->Id] = nFiR;
+    if ( fBetterFo ) pBestFo[pObj->Id] = nFoR;
+
+    fCollected = Aig_ObjIsTravIdCurrent( p, pObj );
+    Aig_ObjSetTravIdCurrent( p, pObj );
+
+    if ( Aig_ObjIsConst1(pObj) )
+        return;
+    if ( Saig_ObjIsPo(p, pObj) )
+        return;
+    if ( Saig_ObjIsLi(p, pObj) )
+    {
+        pMatch = Saig_ObjLiToLo( p, pObj );
+        if ( !Aig_ObjIsTravIdCurrent( p, pMatch ) || fBetterFi || fBetterFo )
+            Phy_AigConeAsym_rec( p, pMatch, nFiR, nFoR, vNodes, pBestFi, pBestFo );
+        if ( nFiR > 0 )
+            Phy_AigConeAsym_rec( p, Aig_ObjFanin0(pObj), nFiR-1, nFoR, vNodes, pBestFi, pBestFo );
+        return;
+    }
+
+    if ( !fCollected )
+        Vec_PtrPush( vNodes, pObj );
+
+    if ( Saig_ObjIsPi(p, pObj) )
+        return;
+    if ( Saig_ObjIsLo(p, pObj) )
+    {
+        pMatch = Saig_ObjLoToLi( p, pObj );
+        if ( !Aig_ObjIsTravIdCurrent( p, pMatch ) || fBetterFi || fBetterFo )
+            Phy_AigConeAsym_rec( p, pMatch, nFiR, nFoR, vNodes, pBestFi, pBestFo );
+        if ( nFoR > 0 )
+        {
+            Aig_ObjForEachFanout( p, pObj, pFanout, iFanout, i )
+                Phy_AigConeAsym_rec( p, pFanout, nFiR, nFoR-1, vNodes, pBestFi, pBestFo );
+        }
+        return;
+    }
+
+    assert( Aig_ObjIsNode(pObj) );
+    if ( nFiR > 0 )
+    {
+        Phy_AigConeAsym_rec( p, Aig_ObjFanin0(pObj), nFiR-1, nFoR, vNodes, pBestFi, pBestFo );
+        Phy_AigConeAsym_rec( p, Aig_ObjFanin1(pObj), nFiR-1, nFoR, vNodes, pBestFi, pBestFo );
+    }
+    if ( nFoR > 0 )
+    {
+        Aig_ObjForEachFanout( p, pObj, pFanout, iFanout, i )
+            Phy_AigConeAsym_rec( p, pFanout, nFiR, nFoR-1, vNodes, pBestFi, pBestFo );
+    }
+}
+
+static Vec_Ptr_t * Phy_AigConeAsymOutline( Aig_Man_t * p, Aig_Obj_t * pObj,
+    int nFaninRadius, int nFanoutRadius )
+{
+    Vec_Ptr_t * vNodes;
+    Aig_Obj_t * pObjLi, * pObjLo;
+    int * pBestFi, * pBestFo, i;
+    pBestFi = ABC_CALLOC( int, Aig_ManObjNumMax(p) );
+    pBestFo = ABC_CALLOC( int, Aig_ManObjNumMax(p) );
+    vNodes = Vec_PtrAlloc( 1000 );
+    Aig_ManIncrementTravId( p );
+    Phy_AigConeAsym_rec( p, pObj, nFaninRadius, nFanoutRadius, vNodes, pBestFi, pBestFo );
+    Vec_PtrSort( vNodes, (int (*)(const void *, const void *))Aig_ObjCompareIdIncrease );
+    Saig_ManForEachLiLo( p, pObjLi, pObjLo, i )
+        assert( Aig_ObjIsTravIdCurrent(p, pObjLi) ==
+                Aig_ObjIsTravIdCurrent(p, pObjLo) );
+    ABC_FREE( pBestFi );
+    ABC_FREE( pBestFo );
+    return vNodes;
 }
 
 static int Phy_MkDirIfNeeded( const char * pDir )
@@ -1362,7 +1481,7 @@ static int Phy_NodeCmpByPartPotential( const void * pA, const void * pB )
 
 static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int SeqTemplate )
 {
-    const char * pCmds[5] = { NULL };
+    const char * pCmds[6] = { NULL };
     int nCmds = 0;
     int i;
 
@@ -1370,6 +1489,7 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
 
     if ( Part == PHY_PART_HIGH )
     {
+        /* timing-critical: no resub — even level-preserving resub caused +5.8% on hyp */
         if ( SeqTemplate == 0 )
         {
             pCmds[nCmds++] = "balance";
@@ -1391,10 +1511,12 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
     }
     else if ( Part == PHY_PART_LOW )
     {
+        /* aggressive resub for area: large cut (-K 12), multi-node (-N 2), no level constraint */
         if ( SeqTemplate == 0 )
         {
             pCmds[nCmds++] = "rewrite";
             pCmds[nCmds++] = "balance";
+            pCmds[nCmds++] = "resub -K 12 -N 2";
             pCmds[nCmds++] = "refactor";
             pCmds[nCmds++] = "rewrite -z";
         }
@@ -1402,6 +1524,7 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
         {
             pCmds[nCmds++] = "refactor";
             pCmds[nCmds++] = "rewrite";
+            pCmds[nCmds++] = "resub -K 12 -N 2";
             pCmds[nCmds++] = "balance";
             pCmds[nCmds++] = "rewrite -z";
         }
@@ -1409,12 +1532,14 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
         {
             pCmds[nCmds++] = "rewrite";
             pCmds[nCmds++] = "refactor";
+            pCmds[nCmds++] = "resub -K 12 -N 2";
             pCmds[nCmds++] = "balance";
             pCmds[nCmds++] = "rewrite -z";
         }
     }
     else
     {
+        /* balanced: moderate optimization, no resub */
         if ( SeqTemplate == 0 )
         {
             pCmds[nCmds++] = "balance";
@@ -1442,7 +1567,7 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
     return 0;
 }
 
-static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, int nWindowSize, int nObjIdCenter, int nRadius, int SeqTemplate )
+static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, int nWindowSize, int nObjIdCenter, int nFaninRadius, int nFanoutRadius, int SeqTemplate )
 {
     Abc_Ntk_t * pNtk = Abc_FrameReadNtk( pAbc );
     Abc_Ntk_t * pNtkBase;
@@ -1452,14 +1577,26 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     int nCutsMax, nNodesMax, nLevelsOdc, nNodeSizeMax, nConeSizeMax;
     int fUseZerosRwr = 1, fUseZerosRef = 1, fPlaceEnable = 0;
     int fUpdateLevel = 1, fVerbose = 0, fVeryVerbose = 0, fUseDcs = 0;
+    int fUseConeWindow; /* HIGH/LOW use asymmetric cone; MID uses symmetric BFS */
+    int nRadius;        /* symmetric radius for MID legacy path */
+    int nFiR, nFoR;     /* asymmetric radii for HIGH/LOW cone path */
 
     extern int Abc_NtkOrchLocal( Abc_Ntk_t * pNtk, int fUseZeros_rwr, int fUseZeros_ref,
         int fPlaceEnable, int nCutsMax, int nNodesMax, int nLevelsOdc, int fUpdateLevel,
         int fVerbose, int fVeryVerbose, int nNodeSizeMax, int nConeSizeMax, int fUseDcs );
     extern Abc_Ntk_t * Abc_NtkDarExtWin( Abc_Ntk_t * pNtk, int nObjId, int nDist, int fVerbose );
     extern Abc_Ntk_t * Abc_NtkDarInsWin( Abc_Ntk_t * pNtk, Abc_Ntk_t * pWnd, int nObjId, int nDist, int fVerbose );
+    extern Abc_Ntk_t * Abc_NtkFromDarSeqSweep( Abc_Ntk_t * pNtkOld, Aig_Man_t * pMan );
 
-    if ( pNtk == NULL || nObjIdCenter <= 0 || nRadius <= 0 )
+    if ( pNtk == NULL || nObjIdCenter <= 0 )
+        return 1;
+
+    fUseConeWindow = (Part == PHY_PART_HIGH || Part == PHY_PART_LOW);
+    nRadius = (nFaninRadius > nFanoutRadius) ? nFaninRadius : nFanoutRadius;
+    nFiR = nFaninRadius;
+    nFoR = nFanoutRadius;
+
+    if ( !fUseConeWindow && nRadius <= 0 )
         return 1;
 
     pCenter = (nObjIdCenter < Abc_NtkObjNumMax(pNtk)) ? Abc_NtkObj( pNtk, nObjIdCenter ) : NULL;
@@ -1470,13 +1607,58 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     if ( pNtkBase == NULL )
         return 1;
 
-    /* Resolve center's AIG ObjId via pCopy, then use ABC's built-in extwin.
-       Abc_NtkDarExtWin uses nObjId directly in AIG space (after its internal
-       Abc_NtkToDar call). We must pass the AIG ObjId, not the ABC ObjId. */
+    /* Window / cone extraction */
+    if ( fUseConeWindow )
     {
+        /* Directional cone: fanin-budget for critical predecessors / shared
+           logic, fanout-budget only for immediate successors. */
+        Aig_Man_t * pManBase;
+        Aig_Obj_t * pAigCenter;
+        Vec_Ptr_t * vConeNodes;
+        Aig_Man_t * pWndMan;
+        Abc_Ntk_t * pNtkWin;
+
+        pManBase = Abc_NtkToDar( pNtk, 0, 1 );
+        if ( pManBase == NULL )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+        pAigCenter = (Aig_Obj_t *)pCenter->pCopy;
+        if ( pAigCenter == NULL )
+        {
+            Aig_ManStop( pManBase );
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+
+        Aig_ManFanoutStart( pManBase );
+        vConeNodes = Phy_AigConeAsymOutline( pManBase, pAigCenter, nFiR, nFoR );
+        pWndMan = Saig_ManWindowExtractNodes( pManBase, vConeNodes );
+        Vec_PtrFree( vConeNodes );
+        Aig_ManFanoutStop( pManBase );
+        Aig_ManStop( pManBase );
+
+        if ( pWndMan == NULL )
+        {
+            Abc_Print( -1, "Cone window extraction failed.\n" );
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+
+        pNtkWin = Abc_NtkFromAigPhase( pWndMan );
+        pNtkWin->pName = Extra_UtilStrsav( pNtk->pName );
+        pNtkWin->pSpec = Extra_UtilStrsav( pNtk->pSpec );
+        Aig_ManStop( pWndMan );
+
+        pNtkBeforeExt = Abc_FrameReadNtk( pAbc );
+        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkWin );
+    }
+    else
+    {
+        /* MID partition: symmetric BFS window (legacy behavior) */
         Aig_Man_t * pManTmp;
         Aig_Obj_t * pAigCenter;
-        int nAigObjId;
         Abc_Ntk_t * pNtkWin;
 
         pManTmp = Abc_NtkToDar( pNtk, 0, 1 );
@@ -1492,10 +1674,11 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
             Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
             return 1;
         }
-        nAigObjId = pAigCenter->Id;
-        Aig_ManStop( pManTmp );
-
-        pNtkWin = Abc_NtkDarExtWin( pNtk, nAigObjId, nRadius, 0 );
+        {
+            int nAigObjId = pAigCenter->Id;
+            Aig_ManStop( pManTmp );
+            pNtkWin = Abc_NtkDarExtWin( pNtk, nAigObjId, nRadius, 0 );
+        }
         if ( pNtkWin == NULL )
         {
             Abc_Print( -1, "Extracting sequential window has failed.\n" );
@@ -1527,43 +1710,49 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
         return 1;
     }
 
-    if ( Part == PHY_PART_HIGH )
+    /* Window-size-aware parameter clamping.
+       Cone windows can be larger (fanin up to 15) so scale cuts/nodes up. */
     {
-        nCutsMax = (nWindowSize > 16) ? 12 : 10;
-        nNodesMax = 2;
-        nLevelsOdc = 0;
-    }
-    else if ( Part == PHY_PART_LOW )
-    {
-        nCutsMax = 12;
-        nNodesMax = 2;
-        nLevelsOdc = 2;
-        nCutsMax += s_DynLowCutsBonus;
-        nNodesMax += s_DynLowNodesBonus;
-    }
-    else
-    {
-        nCutsMax = (nWindowSize > 16) ? 10 : 9;
-        nNodesMax = 1;
-        nLevelsOdc = 0;
-    }
+        int nEffSize = fUseConeWindow ? (nFiR + nFoR + 4) : nWindowSize;
 
-    nNodeSizeMax = nWindowSize >= 24 ? 12 : (nWindowSize >= 8 ? 10 : 8);
-    if ( pSeed && pSeed->Criticality >= s_CritHigh )
-        nNodeSizeMax += 1;
-    if ( pSeed && pSeed->Fanout > 4 )
-        nNodeSizeMax -= 1;
-    if ( Part == PHY_PART_LOW )
-        nNodeSizeMax += 1;
-    if ( Part == PHY_PART_LOW )
-        nNodeSizeMax += s_DynLowNodeSizeBonus;
-    if ( nNodeSizeMax < 6 )
-        nNodeSizeMax = 6;
-    if ( nNodeSizeMax > 15 )
-        nNodeSizeMax = 15;
-    nConeSizeMax = nNodeSizeMax + 4;
-    if ( nConeSizeMax > 15 )
-        nConeSizeMax = 15;
+        if ( Part == PHY_PART_HIGH )
+        {
+            nCutsMax = (nEffSize > 24) ? 14 : (nEffSize > 16 ? 12 : 10);
+            nNodesMax = 2;
+            nLevelsOdc = 0;
+        }
+        else if ( Part == PHY_PART_LOW )
+        {
+            nCutsMax = (nEffSize > 24) ? 16 : 12;
+            nNodesMax = 3;
+            nLevelsOdc = 4;
+            nCutsMax += s_DynLowCutsBonus;
+            nNodesMax += s_DynLowNodesBonus;
+        }
+        else
+        {
+            nCutsMax = (nWindowSize > 16) ? 10 : 9;
+            nNodesMax = 1;
+            nLevelsOdc = 0;
+        }
+
+        nNodeSizeMax = nEffSize >= 28 ? 14 : (nEffSize >= 24 ? 12 : (nEffSize >= 8 ? 10 : 8));
+        if ( pSeed && pSeed->Criticality >= s_CritHigh )
+            nNodeSizeMax += 1;
+        if ( pSeed && pSeed->Fanout > 4 )
+            nNodeSizeMax -= 1;
+        if ( Part == PHY_PART_LOW )
+            nNodeSizeMax += 2;
+        if ( Part == PHY_PART_LOW )
+            nNodeSizeMax += s_DynLowNodeSizeBonus;
+        if ( nNodeSizeMax < 6 )
+            nNodeSizeMax = 6;
+        if ( nNodeSizeMax > 18 )
+            nNodeSizeMax = 18;
+        nConeSizeMax = nNodeSizeMax + 4;
+        if ( nConeSizeMax > 18 )
+            nConeSizeMax = 18;
+    }
 
     if ( SeqTemplate == 0 )
     {
@@ -1572,9 +1761,9 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     }
     else if ( SeqTemplate == 1 )
     {
-        if ( nNodeSizeMax < 15 )
+        if ( nNodeSizeMax < 18 )
             nNodeSizeMax += 1;
-        if ( nConeSizeMax < 15 )
+        if ( nConeSizeMax < 18 )
             nConeSizeMax += 1;
     }
     else
@@ -1616,9 +1805,10 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
         return 1;
     }
 
-    /* save optimized window, then insert using ABC's built-in inswin.
-       Abc_NtkDarInsWin internally uses Abc_NtkFromDarSeqSweep which preserves
-       the original network's PI/PO structure and naming. */
+    /* Insert optimized window / cone back into base network.
+       HIGH/LOW: use Saig_ManWindowInsertNodes which takes the same vNodes
+                 that were used for extraction (re-computed from base AIG).
+       MID:      use legacy Abc_NtkDarInsWin with symmetric radius. */
     {
         Abc_Ntk_t * pNtkOpt = Abc_NtkDup( Abc_FrameReadNtk(pAbc) );
 
@@ -1626,26 +1816,58 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
 
         if ( pNtkOpt != NULL )
         {
-            /* re-find center in restored base network, resolve its AIG ObjId */
             Abc_Obj_t * pCenterBase = (nObjIdCenter < Abc_NtkObjNumMax(pNtkBase))
                 ? Abc_NtkObj( pNtkBase, nObjIdCenter ) : NULL;
             if ( pCenterBase != NULL && Abc_ObjIsNode(pCenterBase) )
             {
-                Aig_Man_t * pManTmp;
+                Aig_Man_t * pManBase;
                 Aig_Obj_t * pAigCenter;
                 int nAigObjId;
-                Abc_Ntk_t * pNtkResult;
+                Abc_Ntk_t * pNtkResult = NULL;
 
-                pManTmp = Abc_NtkToDar( pNtkBase, 0, 1 );
-                if ( pManTmp != NULL )
+                pManBase = Abc_NtkToDar( pNtkBase, 0, 1 );
+                if ( pManBase != NULL )
                 {
                     pAigCenter = (Aig_Obj_t *)pCenterBase->pCopy;
                     if ( pAigCenter != NULL )
                     {
                         nAigObjId = pAigCenter->Id;
-                        Aig_ManStop( pManTmp );
 
-                        pNtkResult = Abc_NtkDarInsWin( pNtkBase, pNtkOpt, nAigObjId, nRadius, 0 );
+                        if ( fUseConeWindow )
+                        {
+                            /* Re-collect the SAME cone nodes from the base
+                               AIG, then insert the optimized window.
+                               Fanout tracking must span both the outline and
+                               the insert call (InsertNodes internally calls
+                               CollectPos which asserts p->pFanData). */
+                            Vec_Ptr_t * vConeNodes;
+                            Aig_Man_t * pWndOpt;
+                            Aig_Man_t * pNewMan;
+
+                            Aig_ManFanoutStart( pManBase );
+                            vConeNodes = Phy_AigConeAsymOutline( pManBase, pAigCenter, nFiR, nFoR );
+
+                            pWndOpt = Abc_NtkToDar( pNtkOpt, 0, 0 );
+                            if ( pWndOpt != NULL )
+                            {
+                                pNewMan = Saig_ManWindowInsertNodes( pManBase, vConeNodes, pWndOpt );
+                                Aig_ManStop( pWndOpt );
+                                if ( pNewMan != NULL )
+                                {
+                                    pNtkResult = Abc_NtkFromDarSeqSweep( pNtkBase, pNewMan );
+                                    Aig_ManStop( pNewMan );
+                                }
+                            }
+                            Aig_ManFanoutStop( pManBase );
+                            Vec_PtrFree( vConeNodes );
+                        }
+                        else
+                        {
+                            pNtkResult = Abc_NtkDarInsWin( pNtkBase, pNtkOpt, nAigObjId, nRadius, 0 );
+                        }
+
+                        Aig_ManStop( pManBase );
+
                         if ( pNtkResult != NULL )
                         {
                             Abc_FrameReplaceCurrentNetwork( pAbc, pNtkResult );
@@ -1655,13 +1877,13 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
                     }
                     else
                     {
-                        Aig_ManStop( pManTmp );
+                        Aig_ManStop( pManBase );
                     }
                 }
             }
             Abc_NtkDelete( pNtkOpt );
         }
-        Abc_Print( -1, "Inserting sequential window has failed.\n" );
+        Abc_Print( -1, "Inserting window/cone has failed.\n" );
         return 1;
     }
 }
@@ -1824,6 +2046,7 @@ static int Phy_ProcessSeedAttempt(
     int fAccept;
     int fQoROkBefore, fQoROkAfter;
     int nCenterId, nRadius, SeqTemplate;
+    int nFaninRadiusSaved = 0, nFanoutRadiusSaved = 0;
     int nNodesBefore;
     int nLevelBefore;
     int nTotalFanoutBefore;
@@ -1878,7 +2101,14 @@ static int Phy_ProcessSeedAttempt(
     }
 
     nCenterId = Phy_GetWindowCenterObjId( pNtk, pSeed );
-    nRadius = Phy_WindowRadius( pSeed, Part, nWindowSize );
+    {
+        int nFaninRadius, nFanoutRadius;
+        Phy_ConeRadii( pSeed, Part, nWindowSize, &nFaninRadius, &nFanoutRadius );
+        nRadius = (nFaninRadius > nFanoutRadius) ? nFaninRadius : nFanoutRadius;
+        /* Store asymmetric radii for cone-window pass */
+        nFaninRadiusSaved  = nFaninRadius;
+        nFanoutRadiusSaved = nFanoutRadius;
+    }
     SeqTemplate = Phy_SeqSelectTemplate( Part, pSeed );
     if ( nCenterId <= 0 )
     {
@@ -1913,7 +2143,7 @@ static int Phy_ProcessSeedAttempt(
 
     *pfTried = 1;
 
-    if ( Phy_OptWindowPass( pAbc, pSeed, Part, nWindowSize, nCenterId, nRadius, SeqTemplate ) )
+    if ( Phy_OptWindowPass( pAbc, pSeed, Part, nWindowSize, nCenterId, nFaninRadiusSaved, nFanoutRadiusSaved, SeqTemplate ) )
     {
         Abc_Print( -1, "phyopt: local optimization failed. Rolling back.\n" );
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBak );
