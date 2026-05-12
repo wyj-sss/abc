@@ -1825,7 +1825,8 @@ static int Phy_ProcessSeedAttempt(
     int fQoROkBefore, fQoROkAfter;
     int nCenterId, nRadius, SeqTemplate;
     int nNodesBefore;
-    int nFaninSumBefore;
+    int nLevelBefore;
+    int nTotalFanoutBefore;
     Phy_QoR_t QoRBefore, QoRAfter;
 
     *pfTried = 0;
@@ -1892,12 +1893,13 @@ static int Phy_ProcessSeedAttempt(
     if ( pNtkBak == NULL )
         return 1;
     nNodesBefore = Abc_NtkNodeNum( pNtk );
+    nLevelBefore = Abc_NtkLevel( pNtk );
     {
         Abc_Obj_t * pObj;
         int i;
-        nFaninSumBefore = 0;
+        nTotalFanoutBefore = 0;
         Abc_NtkForEachNode( pNtk, pObj, i )
-            nFaninSumBefore += Abc_ObjFaninNum( pObj );
+            nTotalFanoutBefore += Abc_ObjFanoutNum( pObj );
     }
 
     pTriedPart[Part]++;
@@ -1922,25 +1924,49 @@ static int Phy_ProcessSeedAttempt(
     }
 
     pNtk = Abc_FrameReadNtk( pAbc );
-    /* quick pre-filter: if both node count and total fanin sum didn't decrease,
-       skip expensive delay trace. node count alone is too coarse — a netlist
-       with fewer nodes can map to smaller total area only if the fanin sum
-       (proxy for total gate size) also trends down. */
-    if ( Abc_NtkNodeNum(pNtk) >= nNodesBefore )
+    /* P0-A fast pre-evaluation: three conservative veto rules.
+       Only reject when confident the change is useless or harmful;
+       otherwise fall through to full QoR evaluation. */
     {
-        Abc_Obj_t * pObj;
-        int i, nFaninSumAfter = 0;
-        Abc_NtkForEachNode( pNtk, pObj, i )
-            nFaninSumAfter += Abc_ObjFaninNum( pObj );
-        if ( nFaninSumAfter >= nFaninSumBefore )
+        int nNodesAfter   = Abc_NtkNodeNum( pNtk );
+        int nLevelAfter   = Abc_NtkLevel( pNtk );
+        int fReject       = 0;
+        int rejectReason  = 0;
+
+        /* Rule C: Noise veto — no structural change at all, skip delay trace */
+        if ( nNodesAfter == nNodesBefore && nLevelAfter == nLevelBefore )
+        {
+            fReject      = 1;
+            rejectReason = 3; /* area_worse — nothing changed */
+        }
+        /* Rule A: Timing veto — HIGH partition got deeper AND more loaded */
+        else if ( Part == PHY_PART_HIGH && nLevelAfter > nLevelBefore )
+        {
+            int nTotalFanoutAfter = 0;
+            Abc_Obj_t * pObj; int i;
+            Abc_NtkForEachNode( pNtk, pObj, i )
+                nTotalFanoutAfter += Abc_ObjFanoutNum( pObj );
+            if ( nTotalFanoutAfter > nTotalFanoutBefore )
+            {
+                fReject      = 1;
+                rejectReason = 5; /* delay guard violation */
+            }
+        }
+        /* Rule B: Structural veto — node explosion without depth improvement */
+        else if ( nNodesAfter > nNodesBefore + nNodesBefore / 2 && nLevelAfter >= nLevelBefore )
+        {
+            fReject      = 1;
+            rejectReason = 4; /* both worse */
+        }
+
+        if ( fReject )
         {
             Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBak );
             (*pnRejected)++;
-            pRejectReason[3]++; /* area_worse */
+            pRejectReason[rejectReason]++;
             Phy_SeqRecordTemplate( Part, SeqTemplate, 0 );
             return 0;
         }
-        /* node count didn't drop but fanin sum did — worth a full eval */
     }
     fQoROkAfter = Phy_EvalMappedQoR( pNtk, &QoRAfter );
     if ( !fQoROkAfter )

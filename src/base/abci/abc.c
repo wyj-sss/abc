@@ -21918,6 +21918,52 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_Print( -1, "phymid: no network after strash.\n" );
         return 1;
     }
+
+    /* Auto-tune parameters based on circuit features.
+       Ablation data (10 benchmarks, 220 runs) shows that Alpha strategy
+       and CL/CH thresholds benefit from feature-driven selection. */
+    {
+        int nNodes   = Abc_NtkNodeNum( pNtk );
+        int nLevels  = Abc_NtkLevel( pNtk );
+        int nPis     = Abc_NtkPiNum( pNtk );
+        int nPos     = Abc_NtkPoNum( pNtk );
+        int npl      = (nLevels > 0) ? (nNodes / nLevels) : nNodes;
+
+        Abc_Print( 0, "phymid: auto-tune features: nodes=%d levels=%d pis=%d pos=%d nodes/level=%d\n",
+            nNodes, nLevels, nPis, nPos, npl );
+
+        if ( nLevels > 2000 )
+        {
+            if ( npl > 10 )
+            {
+                /* wide deep (div-like): gradual Alpha for balanced partition handling */
+                AlphaLow  = 0.20f; AlphaMiddle = 0.50f; AlphaHigh = 0.70f;
+                Abc_Print( 0, "phymid: auto-tune -> deep+wide  (gradual Alpha: %.2f/%.2f/%.2f)\n",
+                    AlphaLow, AlphaMiddle, AlphaHigh );
+            }
+            else
+            {
+                /* narrow deep (sqrt-like): slack-heavy Alpha */
+                AlphaLow  = 0.10f; AlphaMiddle = 0.20f; AlphaHigh = 0.40f;
+                Abc_Print( 0, "phymid: auto-tune -> deep+narrow (slack-heavy Alpha: %.2f/%.2f/%.2f)\n",
+                    AlphaLow, AlphaMiddle, AlphaHigh );
+            }
+        }
+        else if ( nLevels < 100 && nNodes < 5000 )
+        {
+            /* shallow small (adder-like): tighter thresholds, balanced Alpha */
+            CritLow   = 0.25f; CritHigh  = 0.85f;
+            AlphaLow  = 0.30f; AlphaMiddle = 0.50f; AlphaHigh = 0.80f;
+            Abc_Print( 0, "phymid: auto-tune -> shallow+small (CL=%.2f CH=%.2f Alpha=%.2f/%.2f/%.2f)\n",
+                CritLow, CritHigh, AlphaLow, AlphaMiddle, AlphaHigh );
+        }
+        else
+        {
+            Abc_Print( 0, "phymid: auto-tune -> defaults (CL=%.2f CH=%.2f Alpha=%.2f/%.2f/%.2f)\n",
+                CritLow, CritHigh, AlphaLow, AlphaMiddle, AlphaHigh );
+        }
+    }
+
     pDupSave = Abc_NtkDup( pNtk );
     pDupWork = Abc_NtkDup( pNtk );
     if ( pDupSave == NULL || pDupWork == NULL )
