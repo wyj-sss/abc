@@ -6003,3 +6003,18 @@ rewrite
 refactor
 read_aiger ../EPFL_benchmarks/arithmetic/adder.aig
 phymid
+source -s abc.rc
+read_lib NangateOpenCellLibrary_typical.lib; read_aiger ../EPFL_benchmarks/arithmetic/adder.aig; map -v; ps
+read_lib NangateOpenCellLibrary_typical.lib
+strash
+balance
+rewrite -z
+refactor -z
+rewrite
+resub -K 12 -N 2
+refactor
+map -v
+phymid
+rewrite
+refactor
+source -s abc.rc

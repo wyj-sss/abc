@@ -21764,6 +21764,7 @@ usage:
 int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     char * pCsvFile = "output.csv";
+    char * pAigFile = NULL;
     int nRounds = 1;
     int nTop = 40;
     int nCaseTimeoutSec = 300;
@@ -21791,12 +21792,15 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     Abc_Ntk_t * pNtk, * pDupSave, * pDupWork;
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "C:n:k:L:H:A:B:G:t:i:p:f:g:dvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "C:o:n:k:L:H:A:B:G:t:i:p:f:g:dvh" ) ) != EOF )
     {
         switch ( c )
         {
         case 'C':
             pCsvFile = (char *)globalUtilOptarg;
+            break;
+        case 'o':
+            pAigFile = (char *)globalUtilOptarg;
             break;
         case 'n':
             nRounds = atoi( globalUtilOptarg );
@@ -22074,6 +22078,20 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
         return 1;
     }
 
+    /* write optimized AIG before final map (preserves pure AIG structure) */
+    if ( pAigFile != NULL && pAigFile[0] != '\0' )
+    {
+        char BufWriteAig[4096];
+        sprintf( BufWriteAig, "write_aiger %s", pAigFile );
+        if ( Cmd_CommandExecute( pAbc, BufWriteAig ) )
+        {
+            Abc_Print( -1, "phymid: write_aiger %s failed.\n", pAigFile );
+            return 1;
+        }
+        if ( fVerbose )
+            Abc_Print( 1, "phymid: wrote optimized AIG to %s\n", pAigFile );
+    }
+
     nArgcMap = 0;
     pArgvMap[nArgcMap++] = "map";
     if ( fVerbose )
@@ -22085,14 +22103,15 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
 
     if ( fVerbose )
-        Abc_Print( 1, "phymid: done. You can now run write_verilog/write_blif (or strash; write_aiger).\n" );
+        Abc_Print( 1, "phymid: done. You can now run write_verilog/write_blif.\n" );
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: phymid [-C file.csv] [-n num] [-k num] [-L float] [-H float] [-A float] [-B float] [-G float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
-    Abc_Print( -2, "\t         runs middle flow only: map_oto -> mapper_extract -> phyread -> phyopt -> map\n" );
+    Abc_Print( -2, "usage: phymid [-C file.csv] [-o file.aig] [-n num] [-k num] [-L float] [-H float] [-A float] [-B float] [-G float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
+    Abc_Print( -2, "\t         runs middle flow only: map_oto -> mapper_extract -> phyread -> phyopt -> strash -> map\n" );
     Abc_Print( -2, "\t         keep IO outside: read_aiger ...; phymid ...; write_verilog/write_blif ...\n" );
     Abc_Print( -2, "\t-C file: CSV path used by mapper_extract and phyread [default = %s]\n", pCsvFile );
+    Abc_Print( -2, "\t-o file: write optimized AIG after strash, before final map [default = none]\n" );
     Abc_Print( -2, "\t-n num : number of optimization rounds (phyopt -n) [default = %d]\n", nRounds );
     Abc_Print( -2, "\t-k num : partition size/top-k (phyopt -k) [default = %d]\n", nTop );
     Abc_Print( -2, "\t-L float: low-criticality threshold (phyopt -L) [default = %.2f]\n", CritLow );

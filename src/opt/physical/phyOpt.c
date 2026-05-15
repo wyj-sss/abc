@@ -35,7 +35,7 @@ typedef struct Phy_QoR_t_
 } Phy_QoR_t;
 
 #define PHY_DYN_ACC_BINS 8
-#define PHY_MICRO_FEAT_DIM 11
+#define PHY_MICRO_FEAT_DIM 15
 #define PHY_SEQ_TEMPLATE_NUM 3
 
 static float s_CritLow = 0.25f;
@@ -72,10 +72,10 @@ static int s_DynL1MinTryWarmupPerPart = 16;
 static float s_DynAccPriorStrength = 4.0f;
 static int s_DynKeepAlivePerPart = 1;
 /* Low-partition relaxation knobs (default off). */
-static int s_DynLowRadiusBonus = 0;
-static int s_DynLowCutsBonus = 0;
-static int s_DynLowNodesBonus = 0;
-static int s_DynLowNodeSizeBonus = 0;
+static int s_DynLowRadiusBonus = 2;
+static int s_DynLowCutsBonus = 2;
+static int s_DynLowNodesBonus = 1;
+static int s_DynLowNodeSizeBonus = 2;
 static float s_DynLowSkipSlackMin = 0.10f;
 /* Low-partition funnel aggressiveness knobs (default off). */
 static int s_DynLowL0KeepBoostPct = 0;
@@ -88,7 +88,8 @@ static float s_FitL1Scale = 0.25f;
 static float s_FitBias = -1.00f;
 static float s_FitW[PHY_MICRO_FEAT_DIM] = {
     1.40f, 0.25f, 0.55f, 0.30f, -0.45f,
-   -0.20f, 1.10f, 0.12f, 0.05f, 0.00f, 0.20f
+   -0.20f, 1.10f, 0.12f, 0.05f, 0.00f, 0.20f,
+    0.00f, 0.00f, 0.00f, 0.00f
 };
 static int s_FitLoaded = 0;
 static int s_FitSampleCount = 0;
@@ -97,14 +98,14 @@ static char s_FitCoefFile[512] = {0};
 static double s_QorAreaEps = 1e-3;
 static double s_QorDelayAbsEps = 1e-3;
 static double s_QorDelayRelTol = 0.0;
-static int s_QorAcceptDelayOnly = 0;
+static int s_QorAcceptDelayOnly = 1;
 static double s_QorGoalMinAreaImprPct = 0.0;
 
 /* Exploration annealing: high temperature = less conservative filtering. */
 static int s_DynAnnealEnable = 1;
 static float s_DynAnnealStart = 1.0f;
-static float s_DynAnnealMin = 0.60f;
-static float s_DynAnnealDecay = 0.85f;
+static float s_DynAnnealMin = 0.50f;
+static float s_DynAnnealDecay = 0.92f;
 static int s_DynAnnealKeepBoostPct = 20;
 static float s_DynAnnealL1Slack = 0.20f;
 static float s_DynAnnealCurrentTemp = 1.0f;
@@ -896,6 +897,10 @@ static void Phy_MicroBuildFeatures(
     pFeat[8] = (Part == PHY_PART_LOW) ? 1.0f : 0.0f;
     pFeat[9] = (Part == PHY_PART_MID) ? 1.0f : 0.0f;
     pFeat[10] = SlackNorm;
+    pFeat[11] = Phy_ClampFloat( (float)pSeed->FaninCount / 6.0f, 0.0f, 1.0f );
+    pFeat[12] = Phy_ClampFloat( (float)pSeed->Level / 200.0f, 0.0f, 1.0f );
+    pFeat[13] = Phy_ClampFloat( pSeed->Arrival / 5000.0f, 0.0f, 1.0f );
+    pFeat[14] = Phy_ClampFloat( pSeed->StructPotentialRaw, 0.0f, 1.0f );
 }
 
 static float Phy_MicroPredictRaw( const Phy_MicroModel_t * pModel, const float * pFeat )
@@ -985,12 +990,13 @@ static void Phy_MicroLogSample(
     Size = ftell( pFile );
     if ( Size == 0 )
     {
-        fprintf( pFile, "part,pot,criticality,slack_potential,struct_potential,fanout,window_size,prior,model_prob,accepted,goal_hit,area_impr_pct,delay_delta,node\n" );
+        fprintf( pFile, "part,pot,criticality,slack,slack_potential,struct_potential,fanout,window_size,prior,model_prob,accepted,goal_hit,area_impr_pct,delay_delta,fanin_count,level,arrival,struct_raw,node\n" );
     }
-    fprintf( pFile, "%d,%.6f,%.6f,%.6f,%.6f,%d,%d,%.6f,%.6f,%d,%d,%.6f,%.6f,%s\n",
+    fprintf( pFile, "%d,%.6f,%.6f,%.6f,%.6f,%.6f,%d,%d,%.6f,%.6f,%d,%d,%.6f,%.6f,%d,%d,%.6f,%.6f,%s\n",
         (int)Part,
         Phy_NodePartPotential( pSeed, Part ),
         pSeed->Criticality,
+        pSeed->Slack,
         pSeed->SlackPotential,
         pSeed->StructPotential,
         pSeed->Fanout,
@@ -1001,6 +1007,10 @@ static void Phy_MicroLogSample(
         GoalHit ? 1 : 0,
         AreaImpr,
         DelayDelta,
+        pSeed->FaninCount,
+        pSeed->Level,
+        pSeed->Arrival,
+        pSeed->StructPotentialRaw,
         pSeed->NodeName );
     fclose( pFile );
     Phy_MicroSampleHashInsert( SampleKey );
@@ -1096,6 +1106,10 @@ static void Phy_ConeRadii( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, in
         BaseFi += 4;
         BaseFo -= 2;
         BaseFi += s_DynLowRadiusBonus;
+    }
+    else if ( Part == PHY_PART_MID )
+    {
+        BaseFi += 2;
     }
 
     if ( pSeed && pSeed->Slack < 0.05f )
@@ -1577,7 +1591,7 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     int nCutsMax, nNodesMax, nLevelsOdc, nNodeSizeMax, nConeSizeMax;
     int fUseZerosRwr = 1, fUseZerosRef = 1, fPlaceEnable = 0;
     int fUpdateLevel = 1, fVerbose = 0, fVeryVerbose = 0, fUseDcs = 0;
-    int fUseConeWindow; /* HIGH/LOW use asymmetric cone; MID uses symmetric BFS */
+    int fUseConeWindow; /* all partitions use asymmetric cone window */
     int nRadius;        /* symmetric radius for MID legacy path */
     int nFiR, nFoR;     /* asymmetric radii for HIGH/LOW cone path */
 
@@ -1591,7 +1605,7 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
     if ( pNtk == NULL || nObjIdCenter <= 0 )
         return 1;
 
-    fUseConeWindow = (Part == PHY_PART_HIGH || Part == PHY_PART_LOW);
+    fUseConeWindow = 1;
     nRadius = (nFaninRadius > nFanoutRadius) ? nFaninRadius : nFanoutRadius;
     nFiR = nFaninRadius;
     nFoR = nFanoutRadius;
@@ -1728,6 +1742,7 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
             nLevelsOdc = 4;
             nCutsMax += s_DynLowCutsBonus;
             nNodesMax += s_DynLowNodesBonus;
+            if ( nNodesMax > 3 ) nNodesMax = 3; /* orchestration nStepsMax cap */
         }
         else
         {
@@ -2253,6 +2268,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
     int i, p, r, nAccepted = 0, nRejected = 0;
     int nWindowSize;
     abctime nTimeToStop = 0;
+    abctime nTimeStart;
     int fTimeout = 0;
     int nTriedPart[3] = {0,0,0};
     int nAcceptedPart[3] = {0,0,0};
@@ -2364,6 +2380,8 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
             MicroModel.KeepMinPct,
             MicroModel.KeepMaxPct );
     }
+
+    nTimeStart = Abc_Clock();
 
     for ( r = 0; r < nRounds; ++r )
     {
@@ -3063,7 +3081,7 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
             Abc_Print( 1, "  - %s : %d\n", pReasonName[iPart], nRejectReason[iPart] );
         Abc_Print( 1, "phyopt: skipped marked=%d low_slack=<0.10=%d\n", nSkippedMarked, nSkippedLowSlack );
     }
-    Abc_Print( 0, "phyopt: done, accepted=%d rejected=%d final_nodes=%d final_levels=%d.\n", nAccepted, nRejected, Abc_NtkNodeNum(pNtk), Abc_NtkLevel(pNtk) );
+    Abc_Print( 0, "phyopt: done, accepted=%d rejected=%d final_nodes=%d final_levels=%d runtime=%.2f.\n", nAccepted, nRejected, Abc_NtkNodeNum(pNtk), Abc_NtkLevel(pNtk), (double)(Abc_Clock() - nTimeStart) / CLOCKS_PER_SEC );
 
     Phy_MarkedNameFree( vMarkedNames );
     return 0;
