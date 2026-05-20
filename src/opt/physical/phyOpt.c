@@ -82,17 +82,17 @@ static int s_DynLowL0KeepBoostPct = 0;
 static float s_DynLowL1Relax = 0.0f;
 static int s_DynLowL2TopKBonus = 0;
 /* Fitted-function scorer (replaces learned micro-model inference in funnel ranking/gating). */
-static int s_FitEnable = 1;
+static int s_FitEnable = 0;
 static float s_FitL0Scale = 0.35f;
 static float s_FitL1Scale = 0.25f;
-static float s_FitBias = -1.00f;
+static float s_FitBias = -0.0126f;
 static float s_FitW[PHY_MICRO_FEAT_DIM] = {
-    1.40f, 0.25f, 0.55f, 0.30f, -0.45f,
-   -0.20f, 1.10f, 0.12f, 0.05f, 0.00f, 0.20f,
-    0.00f, 0.00f, 0.00f, 0.00f
+     0.0006f,  0.0082f, -0.0082f,  0.0007f, -0.0006f,
+    -0.0000f, -0.0046f, -0.0035f, -0.0080f,  0.0116f,
+     0.0030f, -0.0000f,  0.0083f, -0.0012f,  0.0004f
 };
 static int s_FitLoaded = 0;
-static int s_FitSampleCount = 0;
+static int s_FitSampleCount = 2084;
 static char s_FitCoefFile[512] = {0};
 /* QoR acceptance policy: default to delay non-regression + area minimization. */
 static double s_QorAreaEps = 1e-3;
