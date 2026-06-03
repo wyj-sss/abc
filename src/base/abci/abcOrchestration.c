@@ -27,7 +27,7 @@
 
 ABC_NAMESPACE_IMPL_START
 
- 
+
 ////////////////////////////////////////////////////////////////////////
 ///                        DECLARATIONS                              ///
 ////////////////////////////////////////////////////////////////////////
@@ -3370,7 +3370,6 @@ pManRes->timeRes += Abc_Clock() - clk;
         nGain = Rwr_NodeRewrite( pManRwr, pManCutRwr, pNode, fUpdateLevel, fUseZeros_rwr, fPlaceEnable );
 
      // compare local reward and update
-        // if (((! (nGain < 0)) && (! (nGain < pManRes->nLastGain)) && (! (pManRes->nLastGain < pManRef->nLastGain))) || ((! (nGain < 0)) && (! (nGain < pManRef->nLastGain)) && (! (pManRef->nLastGain < pManRes->nLastGain)))){
         if (((! (nGain < 0)) && (! (nGain < pManRes->nLastGain)) && (! (nGain < pManRef->nLastGain)))){
         // update with rewrite
             pGraph = (Dec_Graph_t *)Rwr_ManReadDecs(pManRwr);
@@ -3390,8 +3389,7 @@ Rwr_ManAddTimeUpdate( pManRwr, Abc_Clock() - clk );
                 Dec_GraphFree( pFFormRes );
             }
             continue;
-        } 
-        // if (((! (pManRes->nLastGain < 0)) && (! (pManRes->nLastGain < nGain)) && (! (nGain < pManRef->nLastGain))) || ((! (pManRes->nLastGain < 0)) && (! (pManRes->nLastGain < pManRef->nLastGain)) && (! (pManRef->nLastGain < nGain)))){
+        }
         if (((! (pManRes->nLastGain < 0)) && (! (pManRes->nLastGain < nGain)) && (! (pManRes->nLastGain < pManRef->nLastGain)))){
         // update with Resub
             if ( pFFormRes == NULL ) {
@@ -3411,7 +3409,6 @@ pManRes->timeNtk += Abc_Clock() - clk;
             }
             continue;
         }
-        // if (((! (pManRef->nLastGain < 0)) && (! (pManRef->nLastGain < nGain)) && (! (nGain < pManRes->nLastGain))) || ((! (pManRef->nLastGain < 0)) && (! (pManRef->nLastGain < pManRes->nLastGain)) && (! (pManRes->nLastGain < nGain)))){
         if (((! (pManRef->nLastGain < 0)) && (! (pManRef->nLastGain < nGain)) && (! (pManRef->nLastGain < pManRes->nLastGain)))){
         // update with Refactor
             if ( pFFormRef == NULL ) {

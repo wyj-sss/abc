@@ -65,6 +65,7 @@
 #include "opt/nwk/nwkMerge.h"
 #include "opt/physical/phyInfo.h"
 #include "opt/physical/phyOpt.h"
+#include "map/scl/sclSize.h"
 #include "base/acb/acbPar.h"
 #include "misc/extra/extra.h"
 #include "opt/eslim/eSLIM.h"
@@ -21631,6 +21632,74 @@ usage:
   SeeAlso     []
 
 ***********************************************************************/
+
+static int PhyStime_EvalQoR( Abc_Frame_t * pAbc, Abc_Ntk_t * pNtk, Phy_QoR_t * pQoR )
+{
+    extern Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, Mio_Library_t* userLib, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
+    extern unsigned enable_dbg_outs;
+    unsigned saved_dbg_outs;
+    Abc_Ntk_t * pNtkSaved, * pNtkDup, * pNtkMapped;
+    SC_Lib * pLib;
+    SC_Man * pScMan;
+    int fOk = 0;
+
+    if ( pAbc == NULL || pNtk == NULL || pQoR == NULL )
+        return 0;
+
+    pNtkSaved = Abc_FrameReadNtk( pAbc );
+    pLib = (SC_Lib *)pAbc->pLibScl;
+    if ( pLib == NULL )
+        return 0;
+
+    pNtkDup = Abc_NtkDup( pNtk );
+    if ( pNtkDup == NULL )
+        return 0;
+
+    if ( !Abc_NtkIsStrash( pNtkDup ) )
+    {
+        Abc_Ntk_t * pStr = Abc_NtkStrash( pNtkDup, 0, 0, 0 );
+        Abc_NtkDelete( pNtkDup );
+        pNtkDup = pStr;
+        if ( pNtkDup == NULL )
+            return 0;
+    }
+
+    pNtkMapped = Abc_NtkMap( pNtkDup, NULL, -1, 0.0, 0.0,
+        0.0f, 0.0f, 250.0f, 0, 1, 0, 0, 0, 0, 0 );
+    Abc_NtkDelete( pNtkDup );
+    if ( pNtkMapped == NULL )
+        return 0;
+
+    saved_dbg_outs = enable_dbg_outs;
+    enable_dbg_outs = 0;
+    Abc_FrameReplaceCurrentNetwork( pAbc, pNtkMapped );
+
+    if ( Cmd_CommandExecute( pAbc, "buffer" ) ||
+         Cmd_CommandExecute( pAbc, "upsize" ) ||
+         Cmd_CommandExecute( pAbc, "dnsize" ) )
+    {
+        enable_dbg_outs = saved_dbg_outs;
+        Abc_FrameReplaceCurrentNetwork( pAbc, pNtkSaved );
+        return 0;
+    }
+
+    {
+        Abc_Ntk_t * pNtkAfter = Abc_FrameReadNtk( pAbc );
+        pScMan = Abc_SclManStart( pLib, pNtkAfter, 0, 1, 0, 10000 );
+        if ( pScMan != NULL )
+        {
+            pQoR->Area  = (double)Abc_SclGetTotalArea( pScMan->pNtk );
+            pQoR->Delay = (double)Abc_SclReadMaxDelay( pScMan );
+            Abc_SclManFree( pScMan );
+            fOk = 1;
+        }
+    }
+
+    enable_dbg_outs = saved_dbg_outs;
+    Abc_FrameReplaceCurrentNetwork( pAbc, pNtkSaved );
+    return fOk;
+}
+
 int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
     int nRounds = 3;
@@ -21638,6 +21707,10 @@ int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
     int nCaseTimeoutSec = 0;
     int fVerbose = 1;
     int fDynamicOrder = 0;
+    int fAreaOnly = 0;
+    int fBalanced = 0;
+    int fUseStime = 0;
+    double MaxArea = 0.0, MaxDelay = 0.0;
     float CritLow, CritHigh;
     int c;
 
@@ -21655,7 +21728,7 @@ int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "nkLHtdvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "nkLHtdvbaSM:D:" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21686,6 +21759,16 @@ int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
             break;
         case 'd':
             fDynamicOrder ^= 1;
+            break;
+        case 'M':
+            MaxArea = (double)atof( globalUtilOptarg );
+            if ( MaxArea <= 0.0 )
+                goto usage;
+            break;
+        case 'D':
+            MaxDelay = (double)atof( globalUtilOptarg );
+            if ( MaxDelay <= 0.0 )
+                goto usage;
             break;
         case 'L':
             if ( globalUtilOptind >= argc )
@@ -21722,6 +21805,15 @@ int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
             break;
         case 'h':
             goto usage;
+        case 'a':
+            fAreaOnly ^= 1;
+            break;
+        case 'b':
+            fBalanced ^= 1;
+            break;
+        case 'S':
+            fUseStime ^= 1;
+            break;
         default:
             goto usage;
         }
@@ -21733,10 +21825,14 @@ int Abc_CommandPhyOpt( Abc_Frame_t * pAbc, int argc, char ** argv )
         goto usage;
     }
 
-    return Phy_OptRun( pAbc, s_pPhyData, nRounds, nTop, fVerbose, fDynamicOrder, nCaseTimeoutSec );
+    int Ret;
+    Phy_SetEvalQoRFn( fUseStime ? PhyStime_EvalQoR : NULL );
+    Ret = Phy_OptRun( pAbc, s_pPhyData, nRounds, nTop, fVerbose, fDynamicOrder, fAreaOnly, fBalanced, nCaseTimeoutSec, MaxArea, MaxDelay );
+    Phy_SetEvalQoRFn( NULL );
+    return Ret;
 
 usage:
-    Abc_Print( -2, "usage: phyopt [-n num] [-k num] [-L float] [-H float] [-t sec] [-dvh]\n" );
+    Abc_Print( -2, "usage: phyopt [-n num] [-k num] [-L float] [-H float] [-t sec] [-M area] [-D delay] [-advbSh]\n" );
     Abc_Print( -2, "\t         runs physical-guided partitioned optimization on the current network\n" );
     Abc_Print( -2, "\t         expected flow: read_aiger -> ... -> mapper_extract -> phyread -> phyopt -> write_aiger\n" );
     Abc_Print( -2, "\t-n num : number of optimization rounds [default = %d]\n", nRounds );
@@ -21745,6 +21841,11 @@ usage:
     Abc_Print( -2, "\t-H float: high-criticality threshold [default = %.2f]\n", CritHigh );
     Abc_Print( -2, "\t-t sec : per-case optimization timeout in seconds (0 disables; env fallback PHY_DYN_CASE_TIMEOUT_SEC) [default = %d]\n", nCaseTimeoutSec );
     Abc_Print( -2, "\t-d     : toggle dynamic per-AIG node scheduling (15%% init, 5%% leader, 1%% probe, dual early-stop) [default = no]\n" );
+    Abc_Print( -2, "\t-a     : toggle area_only mode (area non-regression + delay minimization) [default = no]\n" );
+    Abc_Print( -2, "\t-b     : toggle balanced mode (Pareto improvements only, no anchor constraints) [default = no]\n" );
+    Abc_Print( -2, "\t-S     : toggle stime-based QoR evaluation (map+buffer+upsize+dnsize+stime) [default = no]\n" );
+    Abc_Print( -2, "\t-M area: override max-area constraint (>=0, 0=use internal map_oto QoR) [default = 0]\n" );
+    Abc_Print( -2, "\t-D delay: override max-delay constraint (>=0, 0=use internal map_oto QoR) [default = 0]\n" );
     Abc_Print( -2, "\t-v     : toggle verbose output [default = yes]\n" );
     Abc_Print( -2, "\t-h     : print the command usage\n" );
     return 1;
@@ -21770,6 +21871,10 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     int nCaseTimeoutSec = 300;
     int fVerbose = 1;
     int fDynamicOrder = 1;
+    int fAreaOnly = 0;
+    int fBalanced = 0;
+    int fUseStime = 0;
+    double MaxArea = 0.0, MaxDelay = 0.0;
     float CritLow = 0.15f;
     float CritHigh = 0.95f;
     float AlphaLow = 0.10f;
@@ -21782,17 +21887,18 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     char BufRounds[32], BufTop[32], BufLow[32], BufHigh[32], BufTimeout[32];
     char BufInv[32], BufPair[32], BufFan[32], BufGate[32];
     char BufAlphaLow[32], BufAlphaMid[32], BufAlphaHigh[32];
+    char BufMaxArea[32], BufMaxDelay[32];
     char * pArgvMapOto[3];
     char * pArgvExtract[5];
     char * pArgvPhyRead[22];
-    char * pArgvPhyOpt[20];
+    char * pArgvPhyOpt[26];
     char * pArgvMap[3];
     int nArgcMapOto, nArgcExtract, nArgcPhyRead, nArgcPhyOpt, nArgcMap;
     int c;
     Abc_Ntk_t * pNtk, * pDupSave, * pDupWork;
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "C:o:n:k:L:H:A:B:G:t:i:p:f:g:dvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "C:o:n:k:L:H:A:B:G:t:i:p:f:g:dabvShM:D:" ) ) != EOF )
     {
         switch ( c )
         {
@@ -21867,6 +21973,25 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
             break;
         case 'v':
             fVerbose ^= 1;
+            break;
+        case 'a':
+            fAreaOnly ^= 1;
+            break;
+        case 'b':
+            fBalanced ^= 1;
+            break;
+        case 'S':
+            fUseStime ^= 1;
+            break;
+        case 'M':
+            MaxArea = (double)atof( globalUtilOptarg );
+            if ( MaxArea <= 0.0 )
+                goto usage;
+            break;
+        case 'D':
+            MaxDelay = (double)atof( globalUtilOptarg );
+            if ( MaxDelay <= 0.0 )
+                goto usage;
             break;
         case 'h':
             goto usage;
@@ -22048,6 +22173,8 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     sprintf( BufLow, "%.6g", CritLow );
     sprintf( BufHigh, "%.6g", CritHigh );
     sprintf( BufTimeout, "%d", nCaseTimeoutSec );
+    sprintf( BufMaxArea, "%.6g", MaxArea );
+    sprintf( BufMaxDelay, "%.6g", MaxDelay );
 
     nArgcPhyOpt = 0;
     pArgvPhyOpt[nArgcPhyOpt++] = "phyopt";
@@ -22055,6 +22182,12 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
         pArgvPhyOpt[nArgcPhyOpt++] = "-d";
     if ( fVerbose )
         pArgvPhyOpt[nArgcPhyOpt++] = "-v";
+    if ( fAreaOnly )
+        pArgvPhyOpt[nArgcPhyOpt++] = "-a";
+    if ( fBalanced )
+        pArgvPhyOpt[nArgcPhyOpt++] = "-b";
+    if ( fUseStime )
+        pArgvPhyOpt[nArgcPhyOpt++] = "-S";
     pArgvPhyOpt[nArgcPhyOpt++] = "-n";
     pArgvPhyOpt[nArgcPhyOpt++] = BufRounds;
     pArgvPhyOpt[nArgcPhyOpt++] = "-k";
@@ -22065,6 +22198,16 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     pArgvPhyOpt[nArgcPhyOpt++] = BufHigh;
     pArgvPhyOpt[nArgcPhyOpt++] = "-t";
     pArgvPhyOpt[nArgcPhyOpt++] = BufTimeout;
+    if ( MaxArea > 0.0 )
+    {
+        pArgvPhyOpt[nArgcPhyOpt++] = "-M";
+        pArgvPhyOpt[nArgcPhyOpt++] = BufMaxArea;
+    }
+    if ( MaxDelay > 0.0 )
+    {
+        pArgvPhyOpt[nArgcPhyOpt++] = "-D";
+        pArgvPhyOpt[nArgcPhyOpt++] = BufMaxDelay;
+    }
     if ( Abc_CommandPhyOpt( pAbc, nArgcPhyOpt, pArgvPhyOpt ) )
     {
         Abc_Print( -1, "phymid: step phyopt failed.\n" );
@@ -22107,7 +22250,7 @@ int Abc_CommandPhyMid( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: phymid [-C file.csv] [-o file.aig] [-n num] [-k num] [-L float] [-H float] [-A float] [-B float] [-G float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-dvh]\n" );
+    Abc_Print( -2, "usage: phymid [-C file.csv] [-o file.aig] [-n num] [-k num] [-L float] [-H float] [-A float] [-B float] [-G float] [-t sec] [-i float] [-p float] [-f float] [-g float] [-M area] [-D delay] [-dabvSh]\n" );
     Abc_Print( -2, "\t         runs middle flow only: map_oto -> mapper_extract -> phyread -> phyopt -> strash -> map\n" );
     Abc_Print( -2, "\t         keep IO outside: read_aiger ...; phymid ...; write_verilog/write_blif ...\n" );
     Abc_Print( -2, "\t-C file: CSV path used by mapper_extract and phyread [default = %s]\n", pCsvFile );
@@ -22120,11 +22263,16 @@ usage:
     Abc_Print( -2, "\t-B float: alpha for middle-criticality potential (phyread -M) [default = %.2f]\n", AlphaMiddle );
     Abc_Print( -2, "\t-G float: alpha for high-criticality potential (phyread -H) [default = %.2f]\n", AlphaHigh );
     Abc_Print( -2, "\t-t sec : per-case timeout seconds (phyopt -t) [default = %d]\n", nCaseTimeoutSec );
+    Abc_Print( -2, "\t-M area: override area constraint anchor (phyopt -M) [default = from map_oto]\n" );
+    Abc_Print( -2, "\t-D delay: override delay constraint anchor (phyopt -D) [default = from map_oto]\n" );
+    Abc_Print( -2, "\t-S     : toggle stime-based QoR evaluation (phyopt -S) [default = no]\n" );
     Abc_Print( -2, "\t-i float: struct_raw weight inv-chain (phyread -i) [default = %.2f]\n", WInvChain );
     Abc_Print( -2, "\t-p float: struct_raw weight pair-collapse (phyread -p) [default = %.2f]\n", WPairCollapse );
     Abc_Print( -2, "\t-f float: struct_raw weight fanout-ease (phyread -f) [default = %.2f]\n", WFanoutEase );
     Abc_Print( -2, "\t-g float: struct_raw weight gate-score (phyread -g) [default = %.2f]\n", WGateScore );
     Abc_Print( -2, "\t-d     : toggle dynamic per-AIG scheduling in phyopt [default = %s]\n", fDynamicOrder ? "yes" : "no" );
+    Abc_Print( -2, "\t-a     : toggle area_only mode (area non-regression + delay minimization) [default = %s]\n", fAreaOnly ? "yes" : "no" );
+    Abc_Print( -2, "\t-b     : toggle balanced mode (Pareto improvements only, no anchor constraints) [default = %s]\n", fBalanced ? "yes" : "no" );
     Abc_Print( -2, "\t-v     : toggle verbose output [default = %s]\n", fVerbose ? "yes" : "no" );
     Abc_Print( -2, "\t-h     : print the command usage\n" );
     return 1;

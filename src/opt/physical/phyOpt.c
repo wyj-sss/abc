@@ -1,10 +1,12 @@
 #include "opt/physical/phyOpt.h"
 #include "map/mio/mio.h"
+
 #include "aig/aig/aig.h"
 #include "aig/saig/saig.h"
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
+
 #ifdef _WIN32
 #include <direct.h>
 #define PHY_MKDIR(path) _mkdir(path)
@@ -28,11 +30,6 @@ typedef enum
     PHY_PART_MID  = 2
 } Phy_PartType_t;
 
-typedef struct Phy_QoR_t_
-{
-    double Area;
-    double Delay;
-} Phy_QoR_t;
 
 #define PHY_DYN_ACC_BINS 8
 #define PHY_MICRO_FEAT_DIM 15
@@ -99,7 +96,15 @@ static double s_QorAreaEps = 1e-3;
 static double s_QorDelayAbsEps = 1e-3;
 static double s_QorDelayRelTol = 0.0;
 static int s_QorAcceptDelayOnly = 1;
+static int s_QorAcceptAreaOnly = 0;
+static int s_QorAcceptBalanced = 0;
+static Phy_EvalQoRFn s_pEvalQoRFn = NULL;  /* external QoR callback (e.g. stime); NULL = use mapper */
+
 static double s_QorGoalMinAreaImprPct = 0.0;
+static double s_QorOriginalDelay = 0.0;  /* anchor for delay budget (prevent ratchet) */
+static double s_QorOriginalArea = 0.0;  /* anchor for area budget (prevent ratchet) */
+static double s_QorAreaAbsEps = 1e-3;
+static double s_QorAreaRelTol = 0.0;
 
 /* Exploration annealing: high temperature = less conservative filtering. */
 static int s_DynAnnealEnable = 1;
@@ -620,6 +625,11 @@ static void Phy_DynInitFromEnv( void )
         s_QorDelayAbsEps = 1e-3;
     s_QorDelayRelTol = (double)Phy_ClampFloat( Phy_GetEnvFloat( "PHY_QOR_DELAY_REL_TOL", (float)s_QorDelayRelTol ), 0.0f, 0.10f );
     s_QorAcceptDelayOnly = Phy_GetEnvInt( "PHY_QOR_ACCEPT_DELAY_ONLY", s_QorAcceptDelayOnly ) ? 1 : 0;
+    s_QorAcceptAreaOnly = Phy_GetEnvInt( "PHY_QOR_ACCEPT_AREA_ONLY", s_QorAcceptAreaOnly ) ? 1 : 0;
+    s_QorAreaAbsEps = (double)Phy_GetEnvFloat( "PHY_QOR_AREA_ABS_EPS", (float)s_QorAreaAbsEps );
+    if ( s_QorAreaAbsEps < 0.0 )
+        s_QorAreaAbsEps = 1e-3;
+    s_QorAreaRelTol = (double)Phy_ClampFloat( Phy_GetEnvFloat( "PHY_QOR_AREA_REL_TOL", (float)s_QorAreaRelTol ), 0.0f, 0.10f );
     s_QorGoalMinAreaImprPct = (double)Phy_GetEnvFloat( "PHY_MICRO_GOAL_MIN_AREA_IMPR_PCT", (float)s_QorGoalMinAreaImprPct );
     if ( s_QorGoalMinAreaImprPct < 0.0 )
         s_QorGoalMinAreaImprPct = 0.0;
@@ -1096,20 +1106,40 @@ static void Phy_ConeRadii( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, in
     else if ( nWindowSize >= 8 )  { BaseFi = 3; BaseFo = 3; }
     else                          { BaseFi = 2; BaseFo = 2; }
 
-    if ( Part == PHY_PART_HIGH )
+    if ( s_QorAcceptAreaOnly )
     {
-        BaseFi += 7;
-        BaseFo -= 2;
+        if ( Part == PHY_PART_HIGH )
+        {
+            BaseFi += 9;
+            BaseFo -= 3;
+        }
+        else if ( Part == PHY_PART_LOW )
+        {
+            BaseFi += 4;
+            BaseFo -= 2;
+        }
+        else if ( Part == PHY_PART_MID )
+        {
+            BaseFi += 2;
+        }
     }
-    else if ( Part == PHY_PART_LOW )
+    else
     {
-        BaseFi += 4;
-        BaseFo -= 2;
-        BaseFi += s_DynLowRadiusBonus;
-    }
-    else if ( Part == PHY_PART_MID )
-    {
-        BaseFi += 2;
+        if ( Part == PHY_PART_HIGH )
+        {
+            BaseFi += 7;
+            BaseFo -= 2;
+        }
+        else if ( Part == PHY_PART_LOW )
+        {
+            BaseFi += 4;
+            BaseFo -= 2;
+            BaseFi += s_DynLowRadiusBonus;
+        }
+        else if ( Part == PHY_PART_MID )
+        {
+            BaseFi += 2;
+        }
     }
 
     if ( pSeed && pSeed->Slack < 0.05f )
@@ -1118,7 +1148,7 @@ static void Phy_ConeRadii( const Phy_NodeInfo_t * pSeed, Phy_PartType_t Part, in
         BaseFi += 1;
     if ( pSeed && pSeed->Fanout > 8 )
         BaseFo += 1;
-    if ( pSeed && pSeed->OptPotential > 0.30f )
+    if ( pSeed && pSeed->OptPotential > 0.30f && !s_QorAcceptAreaOnly )
         BaseFi += 1;
 
     if ( BaseFi < 2 )  BaseFi = 2;
@@ -1289,16 +1319,28 @@ static int Phy_EvalMappedQoR( Abc_Ntk_t * pNtk, Phy_QoR_t * pQoR )
     Abc_NtkDelete( pMapped );
     return 1;
 }
+void Phy_SetEvalQoRFn( Phy_EvalQoRFn pFn )
+{
+    s_pEvalQoRFn = pFn;
+}
+
+
 
 static double Phy_QorDelayBudget( Phy_QoR_t Before )
 {
     double Rel = Before.Delay * s_QorDelayRelTol;
+    double AnchorDelay = (s_QorOriginalDelay > 0.0) ? s_QorOriginalDelay : Before.Delay;
+    double AnnealMax;
     if ( Rel < 0.0 )
         Rel = 0.0;
     if ( s_DynAnnealEnable )
     {
         float Scale = Phy_DynAnnealScale01( s_DynAnnealCurrentTemp );
-        Rel += Before.Delay * (double)Scale * (double)s_DynAnnealDelayRelTolMax;
+        /* delay_only: reduce effective tolerance to 1 % (from 3 % default) */
+        AnnealMax = s_QorAcceptDelayOnly ? 0.01 : (double)s_DynAnnealDelayRelTolMax;
+        /* Anchor to ORIGINAL circuit delay to prevent the ratchet effect
+           where each accept raises the delay baseline and its budget. */
+        Rel += AnchorDelay * (double)Scale * AnnealMax;
     }
     return s_QorDelayAbsEps + Rel;
 }
@@ -1306,6 +1348,29 @@ static double Phy_QorDelayBudget( Phy_QoR_t Before )
 static int Phy_QorDelayNoWorse( Phy_QoR_t Before, Phy_QoR_t After )
 {
     return After.Delay <= Before.Delay + Phy_QorDelayBudget( Before );
+}
+
+static double Phy_QorAreaBudget( Phy_QoR_t Before )
+{
+    double Rel = Before.Area * s_QorAreaRelTol;
+    double AnchorArea = (s_QorOriginalArea > 0.0) ? s_QorOriginalArea : Before.Area;
+    double AnnealMax;
+    if ( Rel < 0.0 )
+        Rel = 0.0;
+    if ( s_DynAnnealEnable )
+    {
+        float Scale = Phy_DynAnnealScale01( s_DynAnnealCurrentTemp );
+        AnnealMax = s_QorAcceptAreaOnly ? 0.01 : (double)s_DynAnnealDelayRelTolMax;
+        Rel += AnchorArea * (double)Scale * AnnealMax;
+    }
+    return s_QorAreaAbsEps + Rel;
+}
+
+static int Phy_QorAreaNoWorse( Phy_QoR_t Before, Phy_QoR_t After )
+{
+    /* area_only: anchor against original area so LOW savings fund HIGH delay transforms */
+    double Anchor = (s_QorOriginalArea > 0.0) ? s_QorOriginalArea : Before.Area;
+    return After.Area <= Anchor + Phy_QorAreaBudget( Before );
 }
 
 static int Phy_QorGoalHit( Phy_QoR_t Before, Phy_QoR_t After )
@@ -1321,6 +1386,33 @@ static int Phy_QorGoalHit( Phy_QoR_t Before, Phy_QoR_t After )
 
 static int Phy_AcceptByMappedQoR( Phy_QoR_t Before, Phy_QoR_t After )
 {
+    if ( s_QorAcceptBalanced )
+    {
+        /* product mode: two acceptance paths:
+           (1) area*delay product improves ≥2%, area ≤15% increase (delay-driven)
+           (2) area decreases ≥1%, delay ≤1% worse (area-driven, Pareto-friendly) */
+        double prod_before = Before.Area * Before.Delay;
+        double prod_after  = After.Area  * After.Delay;
+        if ( prod_after < prod_before * 0.98 &&
+             After.Area <= Before.Area * 1.15 )
+            return 1;
+        if ( After.Area < Before.Area * 0.99 &&
+             After.Delay <= Before.Delay * 1.01 )
+            return 1;
+        return 0;
+    }
+    if ( s_QorAcceptAreaOnly )
+    {
+        /* area_only mode: area non-regression + delay minimization */
+        if ( !Phy_QorAreaNoWorse( Before, After ) )
+            return 0;
+        if ( After.Delay < Before.Delay - s_QorDelayAbsEps )
+            return 1;
+        if ( After.Area < Before.Area - s_QorAreaAbsEps && After.Delay <= Before.Delay + s_QorDelayAbsEps )
+            return 1;
+        return 0;
+    }
+    /* delay_only mode (default): delay non-regression + area minimization */
     if ( !Phy_QorDelayNoWorse( Before, After ) )
         return 0;
     if ( After.Area < Before.Area - s_QorAreaEps )
@@ -1335,15 +1427,31 @@ static int Phy_ClassifyMappedReject( Phy_QoR_t Before, Phy_QoR_t After )
     int fDelayWorse;
     int fAreaWorse;
 
-    fDelayWorse = !Phy_QorDelayNoWorse( Before, After );
-    fAreaWorse = After.Area > Before.Area + s_QorAreaEps;
+    if ( s_QorAcceptBalanced )
+    {
+        /* product mode: classify by product degradation */
+        double prod_before = Before.Area * Before.Delay;
+        double prod_after  = After.Area  * After.Delay;
+        fDelayWorse = After.Delay > Before.Delay + s_QorDelayAbsEps;
+        fAreaWorse  = prod_after >= prod_before * (1.0 - 1e-12);
+    }
+    else if ( s_QorAcceptAreaOnly )
+    {
+        fDelayWorse = After.Delay > Before.Delay + s_QorDelayAbsEps;
+        fAreaWorse = !Phy_QorAreaNoWorse( Before, After );
+    }
+    else
+    {
+        fDelayWorse = !Phy_QorDelayNoWorse( Before, After );
+        fAreaWorse = After.Area > Before.Area + s_QorAreaEps;
+    }
 
     if ( fDelayWorse && fAreaWorse )
         return 4; /* both worse */
     if ( fDelayWorse )
-        return 5; /* delay guard violation */
+        return 5; /* delay guard violation → in area_only this means delay constraint */
     if ( fAreaWorse )
-        return 3; /* area worse */
+        return 3; /* area guard violation */
     return 1; /* tradeoff / policy reject */
 }
 
@@ -1501,77 +1609,164 @@ static int Phy_RunSeqTemplateOps( Abc_Frame_t * pAbc, Phy_PartType_t Part, int S
 
     SeqTemplate %= PHY_SEQ_TEMPLATE_NUM;
 
-    if ( Part == PHY_PART_HIGH )
+    if ( s_QorAcceptAreaOnly )
     {
-        /* timing-critical: no resub — even level-preserving resub caused +5.8% on hyp */
-        if ( SeqTemplate == 0 )
+        /* area_only (delay optimization): HIGH aggressive, LOW aggressive (area budget), MID balanced */
+        if ( Part == PHY_PART_HIGH )
         {
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "balance";
+            /* timing-critical: aggressive delay-reducing transforms + resub (may cost area) */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "resub -K 8 -N 2";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "resub -K 8 -N 2";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "resub -K 8 -N 2";
+                pCmds[nCmds++] = "rewrite -z";
+            }
         }
-        else if ( SeqTemplate == 1 )
+        else if ( Part == PHY_PART_LOW )
         {
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
+            /* slack-rich: aggressive area optimization — far from critical path, provides budget for HIGH */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
         }
         else
         {
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "refactor -z";
-            pCmds[nCmds++] = "rewrite -z";
-        }
-    }
-    else if ( Part == PHY_PART_LOW )
-    {
-        /* aggressive resub for area: large cut (-K 12), multi-node (-N 2), no level constraint */
-        if ( SeqTemplate == 0 )
-        {
-            pCmds[nCmds++] = "rewrite";
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "resub -K 12 -N 2";
-            pCmds[nCmds++] = "refactor";
-            pCmds[nCmds++] = "rewrite -z";
-        }
-        else if ( SeqTemplate == 1 )
-        {
-            pCmds[nCmds++] = "refactor";
-            pCmds[nCmds++] = "rewrite";
-            pCmds[nCmds++] = "resub -K 12 -N 2";
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
-        }
-        else
-        {
-            pCmds[nCmds++] = "rewrite";
-            pCmds[nCmds++] = "refactor";
-            pCmds[nCmds++] = "resub -K 12 -N 2";
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
+            /* balanced: moderate delay-oriented transforms */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "refactor -z";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "refactor -z";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else
+            {
+                pCmds[nCmds++] = "refactor -z";
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "balance";
+            }
         }
     }
     else
     {
-        /* balanced: moderate optimization, no resub */
-        if ( SeqTemplate == 0 )
+        /* delay_only (area optimization, default): HIGH conservative, LOW aggressive */
+        if ( Part == PHY_PART_HIGH )
         {
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "refactor -z";
+            /* timing-critical: no resub — even level-preserving resub caused +5.8% on hyp */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "balance";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else
+            {
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "refactor -z";
+                pCmds[nCmds++] = "rewrite -z";
+            }
         }
-        else if ( SeqTemplate == 1 )
+        else if ( Part == PHY_PART_LOW )
         {
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "refactor -z";
-            pCmds[nCmds++] = "rewrite -z";
-            pCmds[nCmds++] = "balance";
+            /* aggressive resub for area: large cut (-K 12), multi-node (-N 2), no level constraint */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
+            else
+            {
+                pCmds[nCmds++] = "rewrite";
+                pCmds[nCmds++] = "refactor";
+                pCmds[nCmds++] = "resub -K 12 -N 2";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
         }
         else
         {
-            pCmds[nCmds++] = "refactor -z";
-            pCmds[nCmds++] = "balance";
-            pCmds[nCmds++] = "rewrite -z";
+            /* balanced: moderate optimization, no resub */
+            if ( SeqTemplate == 0 )
+            {
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "refactor -z";
+            }
+            else if ( SeqTemplate == 1 )
+            {
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "refactor -z";
+                pCmds[nCmds++] = "rewrite -z";
+                pCmds[nCmds++] = "balance";
+            }
+            else
+            {
+                pCmds[nCmds++] = "refactor -z";
+                pCmds[nCmds++] = "balance";
+                pCmds[nCmds++] = "rewrite -z";
+            }
         }
     }
 
@@ -1804,6 +1999,56 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
         return 1;
     }
 
+    /* Physical-aware balance: delay-driven decomposition first — reduce tree depth
+       so subsequent area operators have a depth-optimized starting point. */
+    if ( Phy_BalanceRun( pAbc, pNtk, NULL, (int)Part, fVerbose ) > 0 )
+    {
+        pNtk = Abc_FrameReadNtk( pAbc );
+        if ( pNtk == NULL || !Abc_NtkIsStrash(pNtk) )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+    }
+
+    /* Physical-aware refactor: large cone restructuring (MFFC 3-20) */
+    if ( Phy_RefactorRun( pAbc, pNtk, NULL, (int)Part, fVerbose ) > 0 )
+    {
+        pNtk = Abc_FrameReadNtk( pAbc );
+        if ( pNtk == NULL || !Abc_NtkIsStrash(pNtk) )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+    }
+
+    /* Physical-aware rewrite: library-guided decomposition fine-tuning */
+    if ( Phy_RewriteRun( pAbc, pNtk, NULL, (int)Part, fVerbose ) > 0 )
+    {
+        pNtk = Abc_FrameReadNtk( pAbc );
+        if ( pNtk == NULL || !Abc_NtkIsStrash(pNtk) )
+        {
+            Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+            return 1;
+        }
+    }
+
+    /* Physical-aware resubstitution: library-guided resub (area cleanup last).
+       Skip for HIGH partition — resub's area cost is too high on critical paths.
+       For MID partition, resub is allowed but its own area cost check is tighter. */
+    if ( Part != PHY_PART_HIGH )
+    {
+        if ( Phy_ResubRun( pAbc, pNtk, NULL, (int)Part, fVerbose ) > 0 )
+        {
+            pNtk = Abc_FrameReadNtk( pAbc );
+            if ( pNtk == NULL || !Abc_NtkIsStrash(pNtk) )
+            {
+                Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBase );
+                return 1;
+            }
+        }
+    }
+
     RetValue = Abc_NtkOrchLocal( pNtk, fUseZerosRwr, fUseZerosRef, fPlaceEnable,
         nCutsMax, nNodesMax, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose,
         nNodeSizeMax, nConeSizeMax, fUseDcs );
@@ -1992,6 +2237,11 @@ static float Phy_L0Score(
 {
     float Pot = Phy_NodePartPotential( pSeed, Part );
     float Prior = Phy_BinAcceptPrior( Part, Pot, TryBin, AccBin, DynAttempts, DynAcc );
+    if ( s_QorAcceptAreaOnly )
+    {
+        float WPot = 0.15f, WCrit = 0.55f, WPrior = 0.30f;
+        return WPot * Pot + WCrit * pSeed->Criticality + WPrior * Prior;
+    }
     return s_DynL0WPotential * Pot + s_DynL0WCriticality * pSeed->Criticality + s_DynL0WAccPrior * Prior;
 }
 
@@ -2008,6 +2258,13 @@ static float Phy_L1EstimateReward(
     float Prior = Phy_BinAcceptPrior( Part, Pot, TryBin, AccBin, DynAttempts, DynAcc );
     float WindowNorm = (float)nWindowSize / 32.0f;
     float FanPenalty = (float)pSeed->Fanout / 12.0f;
+    if ( s_QorAcceptAreaOnly )
+    {
+        /* delay optimization: reward favours timing-critical seeds */
+        float DelayChance = 0.55f * pSeed->Criticality + 0.20f * Pot + s_DynL1WAccPrior * Prior + 0.05f * WindowNorm + 0.05f * pSeed->SlackPotential;
+        float AreaRisk = 0.50f * (1.0f - Pot) + 0.30f * FanPenalty + 0.20f * WindowNorm;
+        return DelayChance - s_DynL1WindowWeight * WindowNorm - s_DynL1DelayPenalty * AreaRisk;
+    }
     float DelayRisk = 0.60f * pSeed->Criticality + 0.25f * (1.0f - pSeed->SlackPotential) + 0.15f * FanPenalty;
     float AreaChance = 0.55f * Pot + s_DynL1WAccPrior * Prior + 0.10f * pSeed->StructPotential + 0.05f * WindowNorm;
     return AreaChance - s_DynL1WindowWeight * WindowNorm - s_DynL1DelayPenalty * DelayRisk;
@@ -2104,7 +2361,9 @@ static int Phy_ProcessSeedAttempt(
     }
     else
     {
-        fQoROkBefore = Phy_EvalMappedQoR( pNtk, &QoRBefore );
+        fQoROkBefore = s_pEvalQoRFn
+            ? s_pEvalQoRFn( pAbc, pNtk, &QoRBefore )
+            : Phy_EvalMappedQoR( pNtk, &QoRBefore );
         if ( !fQoROkBefore )
         {
             if ( fVerbose )
@@ -2213,7 +2472,11 @@ static int Phy_ProcessSeedAttempt(
             return 0;
         }
     }
-    fQoROkAfter = Phy_EvalMappedQoR( pNtk, &QoRAfter );
+
+
+    fQoROkAfter = s_pEvalQoRFn
+        ? s_pEvalQoRFn( pAbc, pNtk, &QoRAfter )
+        : Phy_EvalMappedQoR( pNtk, &QoRAfter );
     if ( !fQoROkAfter )
     {
         Abc_FrameReplaceCurrentNetwork( pAbc, pNtkBak );
@@ -2260,7 +2523,7 @@ static int Phy_ProcessSeedAttempt(
     return 0;
 }
 
-int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, int fVerbose, int fDynamicOrder, int nCaseTimeoutSec )
+int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, int fVerbose, int fDynamicOrder, int fAreaOnly, int fBalanced, int nCaseTimeoutSec, double MaxArea, double MaxDelay )
 {
     Abc_Ntk_t * pNtk;
     Vec_Ptr_t * vMarkedNames;
@@ -2314,14 +2577,38 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
 
     /* network is guaranteed to be strashed AIG by the phymid pipeline */
     pNtk = Abc_FrameReadNtk( pAbc );
-    if ( pNtk && !Phy_EvalMappedQoR( pNtk, &QoRCached ) )
-        QoRCached.Area = 0.0;
+    if ( pNtk )
+    {
+        if ( s_pEvalQoRFn
+             ? !s_pEvalQoRFn( pAbc, pNtk, &QoRCached )
+             : !Phy_EvalMappedQoR( pNtk, &QoRCached ) )
+            QoRCached.Area = 0.0;
+    }
+    s_QorOriginalDelay = QoRCached.Delay;  /* anchor: prevent ratchet in delay budget */
+    s_QorOriginalArea  = QoRCached.Area;   /* anchor: prevent ratchet in area budget */
+    if ( MaxArea > 0.0 )
+    {
+        Abc_Print( 0, "phyopt: overriding max_area constraint to %.2f (internal was %.2f)\n", MaxArea, s_QorOriginalArea );
+        s_QorOriginalArea = MaxArea;
+    }
+    if ( MaxDelay > 0.0 )
+    {
+        Abc_Print( 0, "phyopt: overriding max_delay constraint to %.2f (internal was %.2f)\n", MaxDelay, s_QorOriginalDelay );
+        s_QorOriginalDelay = MaxDelay;
+    }
 
     nWindowSize = 16;
     if ( nTop > 0 && nTop < nWindowSize )
         nWindowSize = nTop;
 
     Phy_DynInitFromEnv();
+    if ( fAreaOnly )
+        s_QorAcceptAreaOnly = 1;
+    if ( fBalanced )
+        s_QorAcceptBalanced = 1;
+
+    if ( s_QorAcceptAreaOnly || s_QorAcceptBalanced )
+        s_QorAcceptDelayOnly = 0;  /* mutually exclusive with delay_only */
     Phy_MicroModelInitFromEnv( &MicroModel );
     Phy_FitInitFromEnv();
     Phy_SeqStatsResetRun();
@@ -2341,8 +2628,13 @@ int Phy_OptRun( Abc_Frame_t * pAbc, Phy_Data_t * pData, int nRounds, int nTop, i
     {
         Abc_Print( 1, "phyopt: start rounds=%d, criticality partitions high(>=%.3f)->low(<=%.3f)->mid, window=%d, mode=%s.\n",
             nRounds, s_CritHigh, s_CritLow, nWindowSize, fDynamicOrder ? "dynamic" : "fixed" );
-        Abc_Print( 1, "phyopt: objective=delay-non-regression + area minimization (delay_eps=%.4g rel_tol=%.4g area_eps=%.4g delay_only=%s).\n",
-            s_QorDelayAbsEps, s_QorDelayRelTol, s_QorAreaEps, s_QorAcceptDelayOnly ? "on" : "off" );
+        Abc_Print( 1, "phyopt: objective=%s-non-regression + %s minimization (eps=%.4g rel_tol=%.4g delay_only=%s area_only=%s).\n",
+            s_QorAcceptBalanced   ? "product" : (s_QorAcceptAreaOnly ? "area" : "delay"),
+            s_QorAcceptBalanced   ? "product" : (s_QorAcceptAreaOnly ? "delay" : "area"),
+            s_QorAcceptAreaOnly ? s_QorAreaAbsEps : s_QorDelayAbsEps,
+            s_QorAcceptAreaOnly ? s_QorAreaRelTol : s_QorDelayRelTol,
+            s_QorAcceptDelayOnly ? "on" : "off",
+            s_QorAcceptBalanced ? "on" : "off" );
         if ( fDynamicOrder )
             Abc_Print( 1, "phyopt: dynamic scheduler enabled (init=%d%%, leader=%d%%, probe=%d%%, part-stop=%d, global-stop=%d, L2=%s, L2-topk-init=%d, L2-topk-step=%d).\n",
                 s_DynInitPct, s_DynLeaderPct, s_DynProbePct, s_DynPartStopTried, s_DynGlobalStopRounds,
