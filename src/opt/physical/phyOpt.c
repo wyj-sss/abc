@@ -2049,9 +2049,18 @@ static int Phy_OptWindowPass( Abc_Frame_t * pAbc, const Phy_NodeInfo_t * pSeed, 
         }
     }
 
-    RetValue = Abc_NtkOrchLocal( pNtk, fUseZerosRwr, fUseZerosRef, fPlaceEnable,
-        nCutsMax, nNodesMax, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose,
-        nNodeSizeMax, nConeSizeMax, fUseDcs );
+    /* OrchLocal: skip for LOW partition (area priority — standard
+       ABC orchestration may increase area with minimal delay gain). */
+    if ( Part == PHY_PART_LOW )
+    {
+        RetValue = 1;
+    }
+    else
+    {
+        RetValue = Abc_NtkOrchLocal( pNtk, fUseZerosRwr, fUseZerosRef, fPlaceEnable,
+            nCutsMax, nNodesMax, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose,
+            nNodeSizeMax, nConeSizeMax, fUseDcs );
+    }
 
     if ( RetValue <= 0 )
     {

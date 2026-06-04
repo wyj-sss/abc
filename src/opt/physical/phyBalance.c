@@ -350,14 +350,31 @@ int Phy_BalanceRun(
                 nGraphNodes = Kit_DsdCountAigNodes( pExp );
                 Kit_DsdNtkFree( pExp );
             }
-            /* Depth-aware area gating: deeper reduction tolerates more area */
+            /* Partition-aware depth-vs-area gating */
             {
                 int depthImprove = mffcDepth - cand.bestDepth;
                 int nodeBudget;
-                if ( depthImprove >= 4 )      nodeBudget = nMffc + 2;
-                else if ( depthImprove >= 3 ) nodeBudget = nMffc + 1;
-                else if ( depthImprove >= 2 ) nodeBudget = nMffc;
-                else                          nodeBudget = nMffc - 1; /* 1-level: must reduce nodes */
+                if ( Part == 0 )  /* HIGH: aggressive for delay */
+                {
+                    if ( depthImprove >= 3 )      nodeBudget = nMffc + 3;
+                    else if ( depthImprove >= 2 ) nodeBudget = nMffc + 2;
+                    else if ( depthImprove >= 1 ) nodeBudget = nMffc + 1;
+                    else                          nodeBudget = nMffc;
+                }
+                else if ( Part == 2 )  /* MID: balanced */
+                {
+                    if ( depthImprove >= 4 )      nodeBudget = nMffc + 2;
+                    else if ( depthImprove >= 3 ) nodeBudget = nMffc + 1;
+                    else if ( depthImprove >= 2 ) nodeBudget = nMffc;
+                    else                          nodeBudget = nMffc - 1;
+                }
+                else  /* LOW: conservative on area */
+                {
+                    if ( depthImprove >= 5 )      nodeBudget = nMffc + 1;
+                    else if ( depthImprove >= 4 ) nodeBudget = nMffc;
+                    else if ( depthImprove >= 3 ) nodeBudget = nMffc - 1;
+                    else                          nodeBudget = nMffc - 2;
+                }
                 if ( nGraphNodes > nodeBudget )
                     continue;
             }
